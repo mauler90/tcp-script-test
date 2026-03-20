@@ -2428,10 +2428,14 @@ function importPair(txt){
     _pushUndo();
     if(!txt||!txt.trim()){alert('Incolla prima il testo del riutilizzo.');return;}
     try{
-        var lines=txt.trim().split('\\n');
-        if(lines.length<3){alert('Formato non valido: servono 3 righe.');return;}
-        var ip=lines[0].split(' | ');
-        var ep=lines[2].split(' | ');
+        var lines=txt.trim().split('\\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+        if(lines.length<2){alert('Formato non valido: servono almeno 2 righe.');return;}
+        var impLine=lines.find(function(l){return l.indexOf('IMPORT')>=0&&l.indexOf(' | ')>=0;});
+        var expLine=lines.find(function(l){return l.indexOf('EXPORT')>=0&&l.indexOf(' | ')>=0;});
+        if(!impLine){alert('Riga IMPORT non trovata nel testo incollato.');return;}
+        if(!expLine){alert('Riga EXPORT non trovata nel testo incollato.');return;}
+        var ip=impLine.split(' | ');
+        var ep=expLine.split(' | ');
         if(ip.length<8){alert('Riga IMPORT non completa ('+ip.length+' campi trovati).');return;}
         if(ep.length<8){alert('Riga EXPORT non completa ('+ep.length+' campi trovati).');return;}
         var lef=function(s){var m=(s||'').match(/LEF:\\s*(.*)/i);return m&&m[1].trim()!=='\\u2014'?m[1].trim():'';};
@@ -2514,16 +2518,19 @@ function importPair(txt){
         });
         rPairs();rPlanner();
         document.getElementById('import-pair-txt').value='';
-        alert('Riutilizzo importato!');
+        tcpToast('\u2713 Riutilizzo importato!');
     }catch(e){alert('Errore nel parsing: '+e.message);}
 }
 function removePair(txt){
     if(!txt||!txt.trim()){alert('Incolla il testo del riutilizzo da rimuovere.');return;}
     try{
-        var lines=txt.trim().split('\\n');
-        if(lines.length<3){alert('Formato non valido: servono 3 righe.');return;}
-        var ip=lines[0].split(' | ');
-        var ep=lines[2].split(' | ');
+        var lines=txt.trim().split('\\n').map(function(l){return l.trim();}).filter(function(l){return l.length>0;});
+        if(lines.length<2){alert('Formato non valido: servono almeno 2 righe.');return;}
+        var impLine=lines.find(function(l){return l.indexOf('IMPORT')>=0&&l.indexOf(' | ')>=0;});
+        var expLine=lines.find(function(l){return l.indexOf('EXPORT')>=0&&l.indexOf(' | ')>=0;});
+        if(!impLine||!expLine){alert('Formato non riconosciuto.');return;}
+        var ip=impLine.split(' | ');
+        var ep=expLine.split(' | ');
         if(ip.length<6||ep.length<5){alert('Formato non riconosciuto.');return;}
         var pairs=lp();
         var idx=pairs.findIndex(function(p){
@@ -2534,7 +2541,7 @@ function removePair(txt){
         if(!confirm('Rimuovere il riutilizzo?')){return;}
         _pushUndo();rmPair(idx);
         document.getElementById('import-pair-txt').value='';
-        alert('Riutilizzo rimosso.');
+        tcpToast('\u2713 Riutilizzo rimosso.');
     }catch(e){alert('Errore: '+e.message);}
 }
 // ── UNDO STACK (sessionStorage, max 5 snapshot) ──
@@ -2775,7 +2782,7 @@ function tcpPublishGist(){
             if(data.id){
                 localStorage.setItem('tcp_gist_id',data.id);
                 if(btn){btn.textContent='\u2601\uFE0F Pubblica';btn.disabled=false;}
-                alert('Pubblicato! Gist ID: '+data.id+(gid?'':' - Salvato. Condividi questo ID con il collega.'));
+                tcpToast('\u2601\uFE0F Pubblicato'+(gid?'':' - ID: '+data.id+' (salvato)'));
             }else{
                 if(btn){btn.textContent='\u2601\uFE0F Pubblica';btn.disabled=false;}
                 alert('Errore: '+(data.message||JSON.stringify(data)));
@@ -3534,6 +3541,17 @@ function tcpCheckCollegaSilent(){
             tcpSetPairsBadge(result.toAdd.length);
         })
         .catch(function(){});
+}
+function tcpToast(msg,duration){
+    var t=document.getElementById('tcp-toast');
+    if(!t){
+        t=document.createElement('div');t.id='tcp-toast';
+        t.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#002856;color:white;padding:8px 20px;border-radius:6px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;z-index:99999;box-shadow:0 3px 10px rgba(0,0,0,.3);transition:opacity .4s;pointer-events:none;';
+        document.body.appendChild(t);
+    }
+    t.textContent=msg;t.style.opacity='1';
+    clearTimeout(t._timer);
+    t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
 document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');setTimeout(updCounter,300);setTimeout(updCounter,800);setTimeout(tcpCheckCollegaSilent,3000);});
 <\/script>
