@@ -822,40 +822,40 @@ function buildSidePanel() {
     // Contenitore principale
     var panel = document.createElement('div');
     panel.id = 'tcp-side-panel';
-    panel.style.cssText = 'position:fixed;left:0;top:calc(50% - 74px);transform:translateY(-50%);z-index:9998;display:flex;flex-direction:row;align-items:stretch;font-family:Arial,sans-serif;';
+    panel.style.cssText = 'position:fixed;right:0;top:calc(50% - 74px);transform:translateY(-50%);z-index:9998;display:flex;flex-direction:row;align-items:stretch;font-family:Arial,sans-serif;';
 
     // Pannello contenuto (collassabile)
     var body = document.createElement('div');
     body.id = 'tcp-side-body';
-    body.style.cssText = 'background:white;border:2px solid #002856;border-left:none;border-right:none;border-radius:0;padding:10px 8px;width:160px;box-shadow:none;overflow-y:auto;max-height:80vh;transition:width .2s,padding .2s,opacity .2s;overflow:hidden;';
+    body.style.cssText = 'background:white;border:2px solid #002856;border-right:none;border-left:none;border-radius:0;padding:10px 8px;width:160px;box-shadow:none;overflow-y:auto;max-height:80vh;transition:width .2s,padding .2s,opacity .2s;overflow:hidden;';
 
     // Linguetta toggle — fratello flex del body, sempre visibile
     var tab = document.createElement('div');
     tab.id = 'tcp-side-tab';
     tab.title = 'Apri/Chiudi filtri';
-    tab.style.cssText = 'background:#002856;color:white;border:2px solid #002856;border-left:none;border-radius:0 8px 8px 0;width:22px;min-width:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;user-select:none;font-size:11px;font-weight:bold;letter-spacing:1px;box-shadow:3px 0 8px rgba(0,0,0,.2);flex-shrink:0;';
-    tab.textContent = '◀ FILTRI';
+    tab.style.cssText = 'background:#002856;color:white;border:2px solid #002856;border-right:none;border-radius:8px 0 0 8px;width:22px;min-width:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;user-select:none;font-size:11px;font-weight:bold;letter-spacing:1px;box-shadow:-3px 0 8px rgba(0,0,0,.2);flex-shrink:0;';
+    tab.textContent = '▶ FILTRI';
 
     var open = false;
     // Stato iniziale: chiuso
     body.style.width = '0';
     body.style.padding = '0';
     body.style.opacity = '0';
-    tab.textContent = '▶ FILTRI';
+    tab.textContent = '◀ FILTRI';
     function togglePanel() {
         open = !open;
         if (open) {
             body.style.width = '160px';
             body.style.padding = '10px 8px';
             body.style.opacity = '1';
-            body.style.borderLeft = '2px solid #002856';
-            tab.textContent = '◀ FILTRI';
+            body.style.borderRight = '2px solid #002856';
+            tab.textContent = '▶ FILTRI';
         } else {
             body.style.width = '0';
             body.style.padding = '0';
             body.style.opacity = '0';
-            body.style.borderLeft = 'none';
-            tab.textContent = '▶ FILTRI';
+            body.style.borderRight = 'none';
+            tab.textContent = '◀ FILTRI';
         }
     }
     tab.addEventListener('click', togglePanel);
@@ -939,8 +939,8 @@ function buildSidePanel() {
         btn('📥 Esporta', '#1a5c1a', function(){ tcpEsportaTrattteGest(); })
     ));
 
-    panel.appendChild(body);
     panel.appendChild(tab);
+    panel.appendChild(body);
     document.body.appendChild(panel);
 }
 
@@ -3496,13 +3496,13 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         &nbsp;|&nbsp;
         ${[["20'","20'"],["40'","40'"],["40HC","40HC"]].map(([l,v])=>`<label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="nco" value="${v}"> ${l}</label>`).join('')}
         &nbsp;|&nbsp;
-        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntt" value="import" onclick="applyTTFilter()"> Import</label>
-        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntt" value="export" onclick="applyTTFilter()"> Export</label>
+        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntt" value="import"> Import</label>
+        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntt" value="export"> Export</label>
         &nbsp;|&nbsp;
         <span style="color:#666;">Porto:</span>
-        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="la spezia" onclick="applyTTFilter()"> SPZ</label>
-        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="livorno" onclick="applyTTFilter()"> LIV</label>
-        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="genova" onclick="applyTTFilter()"> GOA</label>
+        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="la spezia"> SPZ</label>
+        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="livorno"> LIV</label>
+        <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="ntp" value="genova"> GOA</label>
     </div>
     <div id="filter-bar" style="background:#f0f4fa;border-bottom:1px solid #d0dff0;padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
         <span style="font-weight:bold;color:#002856;">👁 Mostra solo:</span>
