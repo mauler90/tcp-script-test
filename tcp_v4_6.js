@@ -4154,16 +4154,10 @@ function stop() {
 // ────────────────────────────────────────────────
 //  WIDGET GESTIONALE
 // ────────────────────────────────────────────────
-function tcpToggleAutoGist(mode, btn) {
+function tcpToggleAutoGist(mode) {
     var st = ss.load() || {};
-    if (st.autoGist === mode) {
-        // Deseleziona se gia attivo
-        st.autoGist = null;
-    } else {
-        st.autoGist = mode;
-    }
+    st.autoGist = (st.autoGist === mode) ? null : mode;
     ss.save(st);
-    // Aggiorna stili tutti e 3
     var map = {sync:'mon-auto-sync', pub:'mon-auto-pub', syncpub:'mon-auto-syncpub'};
     var colors = {sync:'#1a65b8', pub:'#1a65b8', syncpub:'#6a1fb8'};
     Object.keys(map).forEach(function(k) {
@@ -4194,9 +4188,9 @@ function buildWidget() {
             </select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;">
-            <button id="mon-auto-sync" onclick="tcpToggleAutoGist('sync',this)" style="background:${state?.autoGist==='sync'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='sync'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Sync</button>
-            <button id="mon-auto-pub" onclick="tcpToggleAutoGist('pub',this)" style="background:${state?.autoGist==='pub'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='pub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Pub</button>
-            <button id="mon-auto-syncpub" onclick="tcpToggleAutoGist('syncpub',this)" style="background:${state?.autoGist==='syncpub'?'#6a1fb8':'#e8ecf4'};color:${state?.autoGist==='syncpub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Sync+Pub</button>
+            <button id="mon-auto-sync" style="background:${state?.autoGist==='sync'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='sync'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Sync</button>
+            <button id="mon-auto-pub" style="background:${state?.autoGist==='pub'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='pub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Pub</button>
+            <button id="mon-auto-syncpub" style="background:${state?.autoGist==='syncpub'?'#6a1fb8':'#e8ecf4'};color:${state?.autoGist==='syncpub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Sync+Pub</button>
         </div>
         <div style="font-weight:bold;margin-bottom:3px;font-size:11px;">Compagnie:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;font-size:11px;">
@@ -4215,6 +4209,11 @@ function buildWidget() {
     `;
     document.body.appendChild(box);
     tcpMakeDraggable(box, 'tcp_widget_monitor_pos');
+    ['sync','pub','syncpub'].forEach(function(mode) {
+        var bid = mode === 'syncpub' ? 'mon-auto-syncpub' : 'mon-auto-' + mode;
+        var b = document.getElementById(bid);
+        if (b) b.addEventListener('click', function() { tcpToggleAutoGist(mode); });
+    });
     statusEl = document.getElementById('mon-status');
 
     function _updateScanBtnColor() {
