@@ -2752,6 +2752,7 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
             if(!parsed.pairs||!Array.isArray(parsed.pairs)){alert('Formato non valido.');return;}
             var result=tcpDoMerge(parsed.pairs);
             _mergePayload={toAdd:result.toAdd,conflicts:result.conflicts,source:'gist',autoPublish:autoPublish};
+            tcpSetPairsBadge(0);
             tcpShowMergePairsModal(result);
         })
         .catch(function(err){
@@ -3427,7 +3428,41 @@ function tcpPairTitle(dl,count){
     var badge=isToday?' <span style="background:#f0a500;color:white;border-radius:3px;padding:1px 7px;font-size:10px;font-weight:bold;vertical-align:middle;">OGGI</span>':'';
     return '📅 Riutilizzi del '+dl+' &nbsp;·&nbsp; <span style="color:#555;font-weight:normal;font-size:12px;">'+count+(count===1?' abbinamento':' abbinamenti')+'</span>'+badge;
 }
-document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');setTimeout(updCounter,300);setTimeout(updCounter,800);});
+// -- CONTROLLO SILENZIOSO GIST COLLEGA --
+function tcpSetPairsBadge(n){
+    var btn=document.querySelector('.tb[data-t="pairs"]');
+    if(!btn)return;
+    var existing=btn.querySelector('.tcp-new-badge');
+    if(n>0){
+        if(!existing){
+            var badge=document.createElement('span');
+            badge.className='tcp-new-badge';
+            badge.style.cssText='background:#e74c3c;color:white;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:bold;margin-left:5px;vertical-align:middle;';
+            badge.textContent='+'+n;
+            btn.appendChild(badge);
+        }else{
+            existing.textContent='+'+n;
+        }
+    }else{
+        if(existing)existing.remove();
+    }
+}
+function tcpCheckCollegaSilent(){
+    var tok=localStorage.getItem('tcp_gist_token')||'';
+    var gidc=localStorage.getItem('tcp_gist_id_collega')||'';
+    if(!tok||!gidc)return;
+    fetch('https://api.github.com/gists/'+gidc,{headers:{'Authorization':'Bearer '+tok}})
+        .then(function(r){return r.json();})
+        .then(function(data){
+            if(!data.files||!data.files['tcp_pairs.json'])return;
+            var parsed=JSON.parse(data.files['tcp_pairs.json'].content);
+            if(!parsed.pairs||!Array.isArray(parsed.pairs))return;
+            var result=tcpDoMerge(parsed.pairs);
+            tcpSetPairsBadge(result.toAdd.length);
+        })
+        .catch(function(){});
+}
+document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');setTimeout(updCounter,300);setTimeout(updCounter,800);setTimeout(tcpCheckCollegaSilent,3000);});
 <\/script>
 </head><body style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
 
