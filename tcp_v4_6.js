@@ -179,6 +179,43 @@ function collectCounterData() {
     return result;
 }
 
+// -- DRAG HELPER --
+function tcpMakeDraggable(el, storageKey) {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch(e) {}
+    if (saved && saved.left !== undefined) {
+        el.style.left = saved.left; el.style.top = saved.top;
+        el.style.right = 'auto'; el.style.bottom = 'auto';
+    }
+    var isDragging = false, startX, startY, startLeft, startTop;
+    el.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL') return;
+        isDragging = true;
+        var rect = el.getBoundingClientRect();
+        startX = e.clientX; startY = e.clientY;
+        startLeft = rect.left; startTop = rect.top;
+        el.style.left = startLeft + 'px'; el.style.top = startTop + 'px';
+        el.style.right = 'auto'; el.style.bottom = 'auto';
+        el.style.cursor = 'grabbing';
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        var nx = startLeft + (e.clientX - startX);
+        var ny = startTop + (e.clientY - startY);
+        nx = Math.max(0, Math.min(nx, window.innerWidth - el.offsetWidth));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - el.offsetHeight));
+        el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    });
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        el.style.cursor = 'move';
+        localStorage.setItem(storageKey, JSON.stringify({left: el.style.left, top: el.style.top}));
+    });
+    el.style.cursor = 'move';
+}
+
 let _wTitle = null, _wSummary = null, _wDetail = null, _wBtn = null, _wEl = null;
 
 function buildCounterWidget() {
@@ -206,6 +243,7 @@ function buildCounterWidget() {
     box.appendChild(_wDetail);
     _wEl = box;
     document.body.appendChild(box);
+    tcpMakeDraggable(box, 'tcp_widget_counter_pos');
 }
 
 function updateCounterWidget(data) {
@@ -4141,6 +4179,7 @@ function buildWidget() {
         <div id="mon-status" style="font-size:10px;color:#777;text-align:center;">${state?.lastScan?'Ultima: '+state.lastScan:'–'}</div>
     `;
     document.body.appendChild(box);
+    tcpMakeDraggable(box, 'tcp_widget_monitor_pos');
     statusEl = document.getElementById('mon-status');
 
     function _updateScanBtnColor() {
