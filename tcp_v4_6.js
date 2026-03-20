@@ -1,14 +1,22 @@
 // ==UserScript==
-// @name         TCP Completo v4.6
+// @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      4.6
-// @description  Layout, filtri, export, contatore, autocompila + Monitor nuovi viaggi
+// @version      1.0
+// @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
 (function() {
 'use strict';
+
+// =============================================================================
+//  S.R.C - Script Riutilizzo Container per C.r.t.
+//  (c) 2026 Vittorio Zingoni - All rights reserved
+//  Uso interno autorizzato. Vietata la riproduzione o distribuzione
+//  senza esplicito consenso scritto dell'autore.
+// =============================================================================
+
 
 // ═══════════════════════════════════════════════════════════════════
 //  BASE: Layout, filtri, export, contatore, autocompila
@@ -171,6 +179,42 @@ function collectCounterData() {
     return result;
 }
 
+// -- DRAG HELPER --
+function tcpMakeDraggable(el, storageKey) {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(storageKey)); } catch(e) {}
+    if (saved && saved.left !== undefined) {
+        el.style.left = saved.left; el.style.top = saved.top;
+        el.style.right = 'auto'; el.style.bottom = 'auto';
+    }
+    var isDragging = false, startX, startY, startLeft, startTop;
+    var handle = el.firstElementChild || el;
+    handle.style.cursor = 'move';
+    el.addEventListener('mousedown', function(e) {
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'LABEL') return;
+        isDragging = true;
+        var rect = el.getBoundingClientRect();
+        startX = e.clientX; startY = e.clientY;
+        startLeft = rect.left; startTop = rect.top;
+        el.style.left = startLeft + 'px'; el.style.top = startTop + 'px';
+        el.style.right = 'auto'; el.style.bottom = 'auto';
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        var nx = startLeft + (e.clientX - startX);
+        var ny = startTop + (e.clientY - startY);
+        nx = Math.max(0, Math.min(nx, window.innerWidth - el.offsetWidth));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - el.offsetHeight));
+        el.style.left = nx + 'px'; el.style.top = ny + 'px';
+    });
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        localStorage.setItem(storageKey, JSON.stringify({left: el.style.left, top: el.style.top}));
+    });
+}
+
 let _wTitle = null, _wSummary = null, _wDetail = null, _wBtn = null, _wEl = null;
 
 function buildCounterWidget() {
@@ -198,6 +242,7 @@ function buildCounterWidget() {
     box.appendChild(_wDetail);
     _wEl = box;
     document.body.appendChild(box);
+    tcpMakeDraggable(box, 'tcp_widget_counter_pos');
 }
 
 function updateCounterWidget(data) {
@@ -814,40 +859,40 @@ function buildSidePanel() {
     // Contenitore principale
     var panel = document.createElement('div');
     panel.id = 'tcp-side-panel';
-    panel.style.cssText = 'position:fixed;left:0;top:calc(50% - 74px);transform:translateY(-50%);z-index:9998;display:flex;flex-direction:row;align-items:stretch;font-family:Arial,sans-serif;';
+    panel.style.cssText = 'position:fixed;right:0;top:calc(50% - 74px);transform:translateY(-50%);z-index:9998;display:flex;flex-direction:row;align-items:stretch;font-family:Arial,sans-serif;';
 
     // Pannello contenuto (collassabile)
     var body = document.createElement('div');
     body.id = 'tcp-side-body';
-    body.style.cssText = 'background:white;border:2px solid #002856;border-left:none;border-right:none;border-radius:0;padding:10px 8px;width:160px;box-shadow:none;overflow-y:auto;max-height:80vh;transition:width .2s,padding .2s,opacity .2s;overflow:hidden;';
+    body.style.cssText = 'background:white;border:2px solid #002856;border-right:none;border-left:none;border-radius:0;padding:10px 8px;width:160px;box-shadow:none;overflow-y:auto;max-height:80vh;transition:width .2s,padding .2s,opacity .2s;overflow:hidden;';
 
     // Linguetta toggle — fratello flex del body, sempre visibile
     var tab = document.createElement('div');
     tab.id = 'tcp-side-tab';
     tab.title = 'Apri/Chiudi filtri';
-    tab.style.cssText = 'background:#002856;color:white;border:2px solid #002856;border-left:none;border-radius:0 8px 8px 0;width:22px;min-width:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;user-select:none;font-size:11px;font-weight:bold;letter-spacing:1px;box-shadow:3px 0 8px rgba(0,0,0,.2);flex-shrink:0;';
-    tab.textContent = '◀ FILTRI';
+    tab.style.cssText = 'background:#002856;color:white;border:2px solid #002856;border-right:none;border-radius:8px 0 0 8px;width:22px;min-width:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;user-select:none;font-size:11px;font-weight:bold;letter-spacing:1px;box-shadow:-3px 0 8px rgba(0,0,0,.2);flex-shrink:0;';
+    tab.textContent = '▶ FILTRI';
 
     var open = false;
     // Stato iniziale: chiuso
     body.style.width = '0';
     body.style.padding = '0';
     body.style.opacity = '0';
-    tab.textContent = '▶ FILTRI';
+    tab.textContent = '◀ FILTRI';
     function togglePanel() {
         open = !open;
         if (open) {
             body.style.width = '160px';
             body.style.padding = '10px 8px';
             body.style.opacity = '1';
-            body.style.borderLeft = '2px solid #002856';
-            tab.textContent = '◀ FILTRI';
+            body.style.borderRight = '2px solid #002856';
+            tab.textContent = '▶ FILTRI';
         } else {
             body.style.width = '0';
             body.style.padding = '0';
             body.style.opacity = '0';
-            body.style.borderLeft = 'none';
-            tab.textContent = '▶ FILTRI';
+            body.style.borderRight = 'none';
+            tab.textContent = '◀ FILTRI';
         }
     }
     tab.addEventListener('click', togglePanel);
@@ -931,8 +976,8 @@ function buildSidePanel() {
         btn('📥 Esporta', '#1a5c1a', function(){ tcpEsportaTrattteGest(); })
     ));
 
-    panel.appendChild(body);
     panel.appendChild(tab);
+    panel.appendChild(body);
     document.body.appendChild(panel);
 }
 
@@ -4133,6 +4178,7 @@ function buildWidget() {
         <div id="mon-status" style="font-size:10px;color:#777;text-align:center;">${state?.lastScan?'Ultima: '+state.lastScan:'–'}</div>
     `;
     document.body.appendChild(box);
+    tcpMakeDraggable(box, 'tcp_widget_monitor_pos');
     statusEl = document.getElementById('mon-status');
 
     function _updateScanBtnColor() {
@@ -4186,4 +4232,4 @@ waitForTable(() => {
 });
 
 
-})(); // fine TCP Completo v4.1
+})(); // fine S.R.C - Script Riutilizzo Container v1.0 | (c) 2026 Vittorio Zingoni
