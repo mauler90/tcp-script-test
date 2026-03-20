@@ -9,9 +9,6 @@
 
 (function() {
 'use strict';
-// Rimuovi overlay di caricamento appena lo script e eseguito
-(function(){ var _ov=document.getElementById('tcp-loading-overlay'); if(_ov)_ov.remove(); })();
-
 
 // ═══════════════════════════════════════════════════════════════════
 //  BASE: Layout, filtri, export, contatore, autocompila
@@ -747,8 +744,6 @@ function tcpMergeTratteGest(input) {
 //  INIT PRINCIPALE
 // ─────────────────────────────────────────────────────────────────
 function waitForTable(callback) {
-    var _h = document.querySelector('#searchForm\\:resultTable_TRANSPORT_ORDER_DM_head tr');
-    if (_h && _h.children.length > 0) { callback(); return; }
     const obs = new MutationObserver(() => {
         const head = document.querySelector('#searchForm\\:resultTable_TRANSPORT_ORDER_DM_head tr');
         if (head && head.children.length > 0) { obs.disconnect(); callback(); }
@@ -4174,8 +4169,6 @@ function buildWidget() {
 //  AVVIO
 // ────────────────────────────────────────────────
 function waitForTable(cb) {
-    var _h2 = document.querySelector('#searchForm\\:resultTable_TRANSPORT_ORDER_DM_head tr');
-    if (_h2 && _h2.children.length > 0) { cb(); return; }
     const obs = new MutationObserver(() => {
         const h = document.querySelector('#searchForm\\:resultTable_TRANSPORT_ORDER_DM_head tr');
         if (h && h.children.length > 0) { obs.disconnect(); cb(); }
