@@ -3494,18 +3494,28 @@ function tcpSetPairsBadge(n){
             if(existing)existing.remove();
         }
     }
-    // Widget floating colleghi
+    // Widget floating colleghi - costruito con createElement per evitare problemi escaping
     var w=document.getElementById('tcp-colleghi-widget');
     if(n>0){
         if(!w){
             w=document.createElement('div');
             w.id='tcp-colleghi-widget';
             w.style.cssText='position:fixed;bottom:10px;right:240px;background:#e74c3c;color:white;border-radius:6px;padding:8px 14px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;z-index:9999;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:8px;';
-            w.innerHTML='<span style="font-size:16px;">&#128276;</span><span id="tcp-colleghi-msg"></span><button onclick="showTab(\'pairs\');tcpSyncAndPublish();" style="margin-left:8px;background:white;color:#e74c3c;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:bold;">Sync</button><button onclick="document.getElementById(\'tcp-colleghi-widget\').remove()" style="margin-left:4px;background:rgba(255,255,255,.25);color:white;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;">x</button>';
+            var ico=document.createElement('span');ico.textContent='\uD83D\uDD14';ico.style.fontSize='16px';
+            var msg=document.createElement('span');msg.id='tcp-colleghi-msg';
+            var btnSync=document.createElement('button');
+            btnSync.textContent='Sync';
+            btnSync.style.cssText='margin-left:8px;background:white;color:#e74c3c;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:bold;';
+            btnSync.addEventListener('click',function(e){e.stopPropagation();showTab('pairs');tcpSyncAndPublish();});
+            var btnClose=document.createElement('button');
+            btnClose.textContent='x';
+            btnClose.style.cssText='margin-left:4px;background:rgba(255,255,255,.25);color:white;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;';
+            btnClose.addEventListener('click',function(e){e.stopPropagation();w.remove();});
+            w.appendChild(ico);w.appendChild(msg);w.appendChild(btnSync);w.appendChild(btnClose);
             document.body.appendChild(w);
         }
-        var msg=document.getElementById('tcp-colleghi-msg');
-        if(msg)msg.textContent='Collega: +'+n+' riutil'+(n===1?'izzo':'izzi');
+        var msgEl=document.getElementById('tcp-colleghi-msg');
+        if(msgEl)msgEl.textContent='Collega: +'+n+' riutil'+(n===1?'izzo':'izzi');
     }else{
         if(w)w.remove();
     }
