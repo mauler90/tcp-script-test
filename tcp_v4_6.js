@@ -3476,21 +3476,38 @@ function tcpPairTitle(dl,count){
 }
 // -- CONTROLLO SILENZIOSO GIST COLLEGA --
 function tcpSetPairsBadge(n){
+    // Badge sul tab
     var btn=document.querySelector('.tb[data-t="pairs"]');
-    if(!btn)return;
-    var existing=btn.querySelector('.tcp-new-badge');
-    if(n>0){
-        if(!existing){
-            var badge=document.createElement('span');
-            badge.className='tcp-new-badge';
-            badge.style.cssText='background:#e74c3c;color:white;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:bold;margin-left:5px;vertical-align:middle;';
-            badge.textContent='+'+n;
-            btn.appendChild(badge);
+    if(btn){
+        var existing=btn.querySelector('.tcp-new-badge');
+        if(n>0){
+            if(!existing){
+                var badge=document.createElement('span');
+                badge.className='tcp-new-badge';
+                badge.style.cssText='background:#e74c3c;color:white;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:bold;margin-left:5px;vertical-align:middle;';
+                badge.textContent='+'+n;
+                btn.appendChild(badge);
+            }else{
+                existing.textContent='+'+n;
+            }
         }else{
-            existing.textContent='+'+n;
+            if(existing)existing.remove();
         }
+    }
+    // Widget floating colleghi
+    var w=document.getElementById('tcp-colleghi-widget');
+    if(n>0){
+        if(!w){
+            w=document.createElement('div');
+            w.id='tcp-colleghi-widget';
+            w.style.cssText='position:fixed;bottom:10px;right:240px;background:#e74c3c;color:white;border-radius:6px;padding:8px 14px;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;z-index:9999;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;display:flex;align-items:center;gap:8px;';
+            w.innerHTML='<span style="font-size:16px;">&#128276;</span><span id="tcp-colleghi-msg"></span><button onclick="showTab(\'pairs\');tcpSyncAndPublish();" style="margin-left:8px;background:white;color:#e74c3c;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:bold;">Sync</button><button onclick="document.getElementById(\'tcp-colleghi-widget\').remove()" style="margin-left:4px;background:rgba(255,255,255,.25);color:white;border:none;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;">x</button>';
+            document.body.appendChild(w);
+        }
+        var msg=document.getElementById('tcp-colleghi-msg');
+        if(msg)msg.textContent='Collega: +'+n+' riutil'+(n===1?'izzo':'izzi');
     }else{
-        if(existing)existing.remove();
+        if(w)w.remove();
     }
 }
 function tcpCheckCollegaSilent(){
@@ -4106,7 +4123,7 @@ function getFormSettings() {
     const ev = parseInt(document.getElementById('mon-ev')?.value) || 24;
     const eu = document.getElementById('mon-eu')?.value || 'hours';
     return {
-        interval:    parseInt(document.getElementById('mon-int')?.value) || 10,
+        interval:    10,
         intervalMin: eu === 'days' ? ev * 1440 : ev * 60,
         extractVal:  ev,
         extractUnit: eu,
@@ -4137,6 +4154,27 @@ function stop() {
 // ────────────────────────────────────────────────
 //  WIDGET GESTIONALE
 // ────────────────────────────────────────────────
+function tcpToggleAutoGist(mode, btn) {
+    var st = ss.load() || {};
+    if (st.autoGist === mode) {
+        // Deseleziona se gia attivo
+        st.autoGist = null;
+    } else {
+        st.autoGist = mode;
+    }
+    ss.save(st);
+    // Aggiorna stili tutti e 3
+    var map = {sync:'mon-auto-sync', pub:'mon-auto-pub', syncpub:'mon-auto-syncpub'};
+    var colors = {sync:'#1a65b8', pub:'#1a65b8', syncpub:'#6a1fb8'};
+    Object.keys(map).forEach(function(k) {
+        var b = document.getElementById(map[k]);
+        if (!b) return;
+        var active = st.autoGist === k;
+        b.style.background = active ? colors[k] : '#e8ecf4';
+        b.style.color = active ? 'white' : '#002856';
+    });
+}
+
 function buildWidget() {
     if (document.getElementById('tcp-mon-widget')) return;
     const state = ss.load();
@@ -4155,13 +4193,10 @@ function buildWidget() {
                 <option value="days" ${state?.extractUnit==='days'?'selected':''}>giorni</option>
             </select>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:7px;">
-            <label style="white-space:nowrap;display:flex;align-items:center;gap:3px;">
-                <input id="mon-auto" type="checkbox" ${state?.autoRun?'checked':''}> Auto ogni
-            </label>
-            <input id="mon-int" type="number" value="${state?.interval||10}" min="1" max="120"
-                style="width:36px;border:1px solid #002856;border-radius:3px;padding:2px 3px;color:#002856;font-size:11px;">
-            <span>min</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;">
+            <button id="mon-auto-sync" onclick="tcpToggleAutoGist('sync',this)" style="background:${state?.autoGist==='sync'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='sync'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Sync</button>
+            <button id="mon-auto-pub" onclick="tcpToggleAutoGist('pub',this)" style="background:${state?.autoGist==='pub'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='pub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Pub</button>
+            <button id="mon-auto-syncpub" onclick="tcpToggleAutoGist('syncpub',this)" style="background:${state?.autoGist==='syncpub'?'#6a1fb8':'#e8ecf4'};color:${state?.autoGist==='syncpub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Sync+Pub</button>
         </div>
         <div style="font-weight:bold;margin-bottom:3px;font-size:11px;">Compagnie:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;font-size:11px;">
@@ -4197,18 +4232,40 @@ function buildWidget() {
 
     document.getElementById('mon-btn').addEventListener('click', () => {
         const s = getFormSettings();
-        s.autoRun = document.getElementById('mon-auto')?.checked || false;
+        const st = ss.load() || {};
+        s.autoGist = st.autoGist || null;
+        s.autoRun = false;
         const now = new Date();
         s.lastScan = now.toLocaleTimeString('it-IT');
         s.lastScanTs = now.getTime();
-        s.running = s.autoRun;
+        s.running = false;
         ss.save(s);
         clearTimeout(timer);
         const { newCount, newIds, modIds } = collect(s.intervalMin, s.carriers, s.containers);
         openOrUpdate(s, s.lastScan, newCount, newIds, modIds);
         setStatus('Scansione: ' + s.lastScan + ' (+' + newCount + ')');
         document.getElementById('mon-btn').style.background = '#002856';
-        if (s.autoRun) { timer = setTimeout(doSearch, s.interval * 60000); }
+        // Auto Gist dopo scansione
+        var autoGist = s.autoGist;
+        if (autoGist === 'sync') {
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncGist) {
+                    window.tcpMonitorWin.tcpSyncGist();
+                }
+            }, 1500);
+        } else if (autoGist === 'pub') {
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpPublishGist) {
+                    window.tcpMonitorWin.tcpPublishGist();
+                }
+            }, 1500);
+        } else if (autoGist === 'syncpub') {
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncAndPublish) {
+                    window.tcpMonitorWin.tcpSyncAndPublish();
+                }
+            }, 1500);
+        }
     });
 }
 
