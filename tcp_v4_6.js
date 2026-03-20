@@ -1,14 +1,22 @@
 // ==UserScript==
-// @name         TCP Completo v4.6
+// @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      4.6
-// @description  Layout, filtri, export, contatore, autocompila + Monitor nuovi viaggi
+// @version      1.0
+// @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
 (function() {
 'use strict';
+
+// =============================================================================
+//  S.R.C - Script Riutilizzo Container per C.r.t.
+//  (c) 2026 Vittorio Zingoni - All rights reserved
+//  Uso interno autorizzato. Vietata la riproduzione o distribuzione
+//  senza esplicito consenso scritto dell'autore.
+// =============================================================================
+
 
 // ═══════════════════════════════════════════════════════════════════
 //  BASE: Layout, filtri, export, contatore, autocompila
@@ -4183,4 +4191,4 @@ waitForTable(() => {
 });
 
 
-})(); // fine TCP Completo v4.1
+})(); // fine S.R.C v1.0 | (c) 2026 Vittorio Zingoni
