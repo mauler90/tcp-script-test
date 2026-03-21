@@ -3191,14 +3191,8 @@ function tcpOpenKm(i){
     _kmIdx=i;
     var p=lp()[i];if(!p)return;
     var km=p.km||0;
-    var tipo=p.imp.cont==="20'"?'c20':'c40';
-    var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
-    var r=tar.find(function(x){return x.km===km;})||{};
-    var grezzo=p.costoGrezzo||(r[tipo]||0);
     var ki=document.getElementById('tcp-km-modal-km');
-    var ci=document.getElementById('tcp-km-modal-costo');
     if(ki)ki.value=km||'';
-    if(ci)ci.value=grezzo||'';
     var m=document.getElementById('tcp-km-modal');
     if(m)m.style.display='flex';
     setTimeout(function(){if(ki)ki.focus();},50);
@@ -3206,24 +3200,10 @@ function tcpOpenKm(i){
 function tcpSaveKm(i){
     if(i===undefined||i===null)i=_kmIdx;
     var ki=document.getElementById('tcp-km-modal-km');
-    var ci=document.getElementById('tcp-km-modal-costo');
     if(!ki)return;
     var km=parseInt(ki.value)||0;
-    var grezzo=parseFloat(ci?ci.value:0)||0;
     var pairs=lp();var p=pairs[i];if(!p)return;
-    p.km=km;p.costoGrezzo=grezzo;sp(pairs);
-    if(km>0&&grezzo>0){
-        var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
-        var tipo=p.imp.cont==="20'"?'c20':'c40';
-        var r=tar.find(function(x){return x.km===km;});
-        if(r)r[tipo]=grezzo;else{var nr={km:km};nr[tipo]=grezzo;tar.push(nr);}
-        localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
-        var fuel=parseFloat(localStorage.getItem('tcp_fuel')||'0');
-        var cell=document.getElementById('tf-'+km+'-'+tipo);
-        if(cell)cell.textContent='€ '+Math.round(grezzo*(1+fuel/100));
-        var inp=document.querySelector("input[data-km='"+km+"'][data-tipo='"+tipo+"']");
-        if(inp)inp.value=grezzo;
-    }
+    p.km=km;sp(pairs);
     if(km>0){
         var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
         var tid=[p.imp.port,p.imp.address,p.tappa||'',p.exp.address,p.exp.port].join('||');
@@ -3967,9 +3947,6 @@ window.tcpApplicaMerge=function(){
     <div style="display:grid;gap:10px;">
       <label style="font-size:11px;color:#555;">Km<br>
         <input id="tcp-km-modal-km" type="number" placeholder="es. 320" style="width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;margin-top:3px;">
-      </label>
-      <label style="font-size:11px;color:#555;">Costo grezzo €<br>
-        <input id="tcp-km-modal-costo" type="number" placeholder="es. 800" style="width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;margin-top:3px;">
       </label>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
