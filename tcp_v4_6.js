@@ -2767,11 +2767,19 @@ function tcpImportPairsFile(input){
 function tcpPublishGist(){
     var tok=localStorage.getItem('tcp_gist_token')||'';
     if(!tok){alert('Imposta prima il token GitHub nelle impostazioni Gist.');tcpGistSettings();return;}
-    var pairs=lp();
-    if(!pairs.length){alert('Nessun riutilizzo da pubblicare.');return;}
     var gid=localStorage.getItem('tcp_gist_id')||'';
-    var payload=JSON.stringify({version:1,exported:new Date().toISOString(),pairs:pairs},null,2);
-    var body=JSON.stringify({description:'TCP riutilizzi',public:false,files:{'tcp_pairs.json':{content:payload}}});
+    var ts=new Date().toISOString();
+    var pairs=lp();
+    var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
+    var alias=[];try{alias=JSON.parse(localStorage.getItem('tcp_tratte_alias')||'[]');}catch(e){}
+    var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
+    var files={
+        'tcp_pairs.json':{content:JSON.stringify({version:1,exported:ts,pairs:pairs},null,2)},
+        'tcp_tratte.json':{content:JSON.stringify({version:1,exported:ts,tratte:tratte},null,2)},
+        'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)},
+        'tcp_tariffario.json':{content:JSON.stringify({version:1,exported:ts,tariffario:tar},null,2)}
+    };
+    var body=JSON.stringify({description:'S.R.C sync',public:false,files:files});
     var url=gid?'https://api.github.com/gists/'+gid:'https://api.github.com/gists';
     var method=gid?'PATCH':'POST';
     var btn=document.getElementById('btn-gist-publish');
@@ -2793,6 +2801,40 @@ function tcpPublishGist(){
             alert('Errore di rete: '+err.message);
         });
 }
+// -- MERGE HELPERS --
+function tcpDoMergeTratte(incoming){
+    var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
+    var toAdd=[];var conflicts=[];var ignored=0;
+    incoming.forEach(function(t){
+        var ex=existing.find(function(x){return x.id===t.id;});
+        if(!ex){toAdd.push(t);}
+        else if(ex.km!==t.km){conflicts.push({ex:ex,inc:t});}
+        else{ignored++;}
+    });
+    return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
+}
+function tcpDoMergeAlias(incoming){
+    var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tratte_alias')||'[]');}catch(e){}
+    var added=0;
+    incoming.forEach(function(a){
+        var ex=existing.find(function(x){return x.nome.toLowerCase()===a.nome.toLowerCase();});
+        if(!ex){existing.push(a);added++;}
+        else{a.indirizzi.forEach(function(ind){if(ex.indirizzi.indexOf(ind)<0){ex.indirizzi.push(ind);added++;}});}
+    });
+    if(added>0)localStorage.setItem('tcp_tratte_alias',JSON.stringify(existing));
+    return{added:added};
+}
+function tcpDoMergeTariffario(incoming){
+    var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
+    var toAdd=[];var conflicts=[];var ignored=0;
+    incoming.forEach(function(t){
+        var ex=existing.find(function(x){return x.km===t.km;});
+        if(!ex){toAdd.push(t);}
+        else if(ex.c20!==t.c20||ex.c40!==t.c40){conflicts.push({ex:ex,inc:t});}
+        else{ignored++;}
+    });
+    return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
+}
 // -- SYNC DA GIST --
 function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
     var btn=document.getElementById(btnId);
@@ -2800,13 +2842,29 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
         .then(function(r){return r.json();})
         .then(function(data){
             if(btn){btn.textContent=btn.dataset.label;btn.disabled=false;}
-            if(!data.files||!data.files['tcp_pairs.json']){alert('Gist collega trovato ma nessun file tcp_pairs.json.');return;}
-            var parsed=JSON.parse(data.files['tcp_pairs.json'].content);
-            if(!parsed.pairs||!Array.isArray(parsed.pairs)){alert('Formato non valido.');return;}
-            var result=tcpDoMerge(parsed.pairs);
-            _mergePayload={toAdd:result.toAdd,conflicts:result.conflicts,source:'gist',autoPublish:autoPublish};
+            if(!data.files){alert('Gist collega non trovato o vuoto.');return;}
+            var pairsResult={toAdd:[],conflicts:[],ignored:0};
+            if(data.files['tcp_pairs.json']){
+                var pp=JSON.parse(data.files['tcp_pairs.json'].content);
+                if(pp.pairs)pairsResult=tcpDoMerge(pp.pairs);
+            }
+            var tratteResult={toAdd:[],conflicts:[],ignored:0};
+            if(data.files['tcp_tratte.json']){
+                var tt=JSON.parse(data.files['tcp_tratte.json'].content);
+                if(tt.tratte)tratteResult=tcpDoMergeTratte(tt.tratte);
+            }
+            if(data.files['tcp_alias.json']){
+                var aa=JSON.parse(data.files['tcp_alias.json'].content);
+                if(aa.alias)tcpDoMergeAlias(aa.alias);
+            }
+            var tarResult={toAdd:[],conflicts:[],ignored:0};
+            if(data.files['tcp_tariffario.json']){
+                var tr=JSON.parse(data.files['tcp_tariffario.json'].content);
+                if(tr.tariffario)tarResult=tcpDoMergeTariffario(tr.tariffario);
+            }
+            _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:tarResult,source:'gist',autoPublish:autoPublish};
             tcpSetPairsBadge(0);
-            tcpShowMergePairsModal(result);
+            tcpShowSyncModal(_mergePayload);
         })
         .catch(function(err){
             if(btn){btn.textContent=btn.dataset.label;btn.disabled=false;}
@@ -2832,7 +2890,8 @@ function tcpSyncAndPublish(){
     tcpFetchCollegaGist(tok,gidc,true,'btn-gist-syncpub');
 }
 // -- MODAL MERGE RIUTILIZZI --
-function tcpShowMergePairsModal(result){
+function tcpShowMergePairsModal(result){tcpShowSyncModal({pairs:result,tratte:{toAdd:[],conflicts:[],ignored:0},tariffario:{toAdd:[],conflicts:[],ignored:0}});}
+function tcpShowSyncModal(payload){
     var m=document.getElementById('merge-pairs-modal');if(!m)return;
     var sumEl=document.getElementById('mpm-summary');
     var confEl=document.getElementById('mpm-conflicts');
@@ -2841,48 +2900,100 @@ function tcpShowMergePairsModal(result){
     if(result.ignored)sum+=result.ignored+' gia presenti ignorati. ';
     if(result.conflicts.length)sum+=result.conflicts.length+' conflitti da risolvere.';
     if(!result.toAdd.length&&!result.conflicts.length)sum='Nessuna differenza, tutto gia aggiornato.';
+    var pD=payload.pairs||payload;
+    var tD=payload.tratte||{toAdd:[],conflicts:[],ignored:0};
+    var rD=payload.tariffario||{toAdd:[],conflicts:[],ignored:0};
+    var totNew=(pD.toAdd||[]).length+(tD.toAdd||[]).length+(rD.toAdd||[]).length;
+    var totConf=(pD.conflicts||[]).length+(tD.conflicts||[]).length+(rD.conflicts||[]).length;
+    var totIgn=(pD.ignored||0)+(tD.ignored||0)+(rD.ignored||0);
+    var sum='';
+    if(totNew)sum+=totNew+' nuovi da aggiungere. ';
+    if(totIgn)sum+=totIgn+' gia presenti ignorati. ';
+    if(totConf)sum+=totConf+' conflitti da risolvere.';
+    if(!totNew&&!totConf)sum='Nessuna differenza, tutto gia aggiornato.';
     if(sumEl)sumEl.textContent=sum;
     if(confEl){
-        if(!result.conflicts.length){confEl.innerHTML='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';}
-        else{
-            confEl.innerHTML=result.conflicts.map(function(cf,ci){
-                var _field=cf.type==='conflict-exp'?'Nr. Container Export diverso':'Nr. Container Import diverso';
-                return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12px;">'
-                    +'<div style="font-weight:bold;color:#002856;margin-bottom:6px;">'+_field+'</div>'
-                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">'
-                    +'<div style="background:#f0f4fa;border-radius:4px;padding:6px 10px;">'
-                    +'<div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:3px;">MIO</div>'
-                    +'<div>'+cf.ex.imp.carrier+' '+cf.ex.imp.cont+' - '+cf.ex.imp.address+'</div>'
-                    +'<div>Nr.IMP: <b>'+(cf.ex.imp.contNr||'assente')+'</b> Nr.EXP: <b>'+(cf.ex.exp.contNr||'assente')+'</b></div>'
-                    +'<div>'+cf.ex.imp.delivery+' / '+cf.ex.exp.delivery+'</div>'
-                    +'</div>'
-                    +'<div style="background:#f0f8f0;border-radius:4px;padding:6px 10px;">'
-                    +'<div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:3px;">COLLEGA</div>'
-                    +'<div>'+cf.inc.imp.carrier+' '+cf.inc.imp.cont+' - '+cf.inc.imp.address+'</div>'
-                    +'<div>Nr.IMP: <b>'+(cf.inc.imp.contNr||'assente')+'</b> Nr.EXP: <b>'+(cf.inc.exp.contNr||'assente')+'</b></div>'
-                    +'<div>'+cf.inc.imp.delivery+' / '+cf.inc.exp.delivery+'</div>'
-                    +'</div></div>'
-                    +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
-                    +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;">'
-                    +'<input type="radio" name="mpc'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Tieni il mio</span></label>'
-                    +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px;border-radius:4px;border:2px solid #27ae60;font-size:11px;">'
-                    +'<input type="radio" name="mpc'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Prendi dal collega</span></label>'
-                    +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:4px 10px;border-radius:4px;border:2px solid #aaa;font-size:11px;">'
-                    +'<input type="radio" name="mpc'+ci+'" value="skip"> <span style="color:#888;">Salta</span></label>'
+        var html='';
+        if((pD.conflicts||[]).length){
+            html+='<div style="font-weight:bold;color:#002856;font-size:12px;margin:8px 0 4px;">Riutilizzi</div>';
+            html+=(pD.conflicts||[]).map(function(cf,ci){
+                var _f=cf.type==='conflict-exp'?'Nr.EXP diverso':'Nr.IMP diverso';
+                return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
+                    +'<div style="font-weight:bold;color:#002856;margin-bottom:4px;">'+_f+'</div>'
+                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
+                    +'<div style="background:#f0f4fa;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">MIO</div>'
+                    +'<div>'+cf.ex.imp.carrier+' '+cf.ex.imp.cont+'</div><div>'+cf.ex.imp.address+'</div></div>'
+                    +'<div style="background:#f0f8f0;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">COLLEGA</div>'
+                    +'<div>'+cf.inc.imp.carrier+' '+cf.inc.imp.cont+'</div><div>'+cf.inc.imp.address+'</div></div></div>'
+                    +'<div style="display:flex;gap:6px;">'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Il mio</span></label>'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #27ae60;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Collega</span></label>'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #aaa;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="skip"> <span style="color:#888;">Salta</span></label>'
                     +'</div></div>';
             }).join('');
         }
+        if((tD.conflicts||[]).length){
+            html+='<div style="font-weight:bold;color:#002856;font-size:12px;margin:8px 0 4px;">Tratte</div>';
+            html+=(tD.conflicts||[]).map(function(cf,ci){
+                return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
+                    +'<b>'+cf.ex.scarico+' - '+cf.ex.carico+'</b>'
+                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0;">'
+                    +'<div style="background:#f0f4fa;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">MIO</div><div>'+cf.ex.km+' km</div></div>'
+                    +'<div style="background:#f0f8f0;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">COLLEGA</div><div>'+cf.inc.km+' km</div></div></div>'
+                    +'<div style="display:flex;gap:6px;">'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;"><input type="radio" name="mtc'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Il mio</span></label>'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #27ae60;font-size:11px;"><input type="radio" name="mtc'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Collega</span></label>'
+                    +'</div></div>';
+            }).join('');
+        }
+        if((rD.conflicts||[]).length){
+            html+='<div style="font-weight:bold;color:#002856;font-size:12px;margin:8px 0 4px;">Tariffario</div>';
+            html+=(rD.conflicts||[]).map(function(cf,ci){
+                return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
+                    +'<b>'+cf.ex.km+' km</b>'
+                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0;">'
+                    +'<div style="background:#f0f4fa;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">MIO</div><div>20: '+(cf.ex.c20||'-')+' 40: '+(cf.ex.c40||'-')+'</div></div>'
+                    +'<div style="background:#f0f8f0;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">COLLEGA</div><div>20: '+(cf.inc.c20||'-')+' 40: '+(cf.inc.c40||'-')+'</div></div></div>'
+                    +'<div style="display:flex;gap:6px;">'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;"><input type="radio" name="mtr'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Il mio</span></label>'
+                    +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #27ae60;font-size:11px;"><input type="radio" name="mtr'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Collega</span></label>'
+                    +'</div></div>';
+            }).join('');
+        }
+        if(!html)html='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';
+        confEl.innerHTML=html;
     }
     m.style.display='flex';
 }
 function tcpApplyMergePairsModal(){
     if(!_mergePayload)return;
-    var resolutions=(_mergePayload.conflicts||[]).map(function(cf,ci){
+    var autoPublish=_mergePayload.autoPublish||false;
+    var pD=_mergePayload.pairs||_mergePayload;
+    var tD=_mergePayload.tratte||{toAdd:[],conflicts:[]};
+    var rD=_mergePayload.tariffario||{toAdd:[],conflicts:[]};
+    // Pairs
+    var pRes=(pD.conflicts||[]).map(function(cf,ci){
         var sel=document.querySelector('input[name="mpc'+ci+'"]:checked');
         return{ex:cf.ex,inc:cf.inc,choice:sel?sel.value:'mine'};
     });
-    var autoPublish=_mergePayload.autoPublish||false;
-    tcpApplyMergePairs(_mergePayload.toAdd,resolutions);
+    tcpApplyMergePairs(pD.toAdd||[],pRes);
+    // Tratte
+    var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
+    (tD.toAdd||[]).forEach(function(t){tratte.push(t);});
+    (tD.conflicts||[]).forEach(function(cf,ci){
+        var sel=document.querySelector('input[name="mtc'+ci+'"]:checked');
+        if(sel&&sel.value==='theirs'){var ex=tratte.find(function(x){return x.id===cf.ex.id;});if(ex)ex.km=cf.inc.km;}
+    });
+    localStorage.setItem('tcp_tratte',JSON.stringify(tratte));
+    if(window.tcpRenderTratte)tcpRenderTratte();
+    // Tariffario
+    var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
+    (rD.toAdd||[]).forEach(function(t){tar.push(t);});
+    (rD.conflicts||[]).forEach(function(cf,ci){
+        var sel=document.querySelector('input[name="mtr'+ci+'"]:checked');
+        if(sel&&sel.value==='theirs'){var ex=tar.find(function(x){return x.km===cf.ex.km;});if(ex){ex.c20=cf.inc.c20;ex.c40=cf.inc.c40;}}
+    });
+    localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
     document.getElementById('merge-pairs-modal').style.display='none';
     _mergePayload=null;
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
