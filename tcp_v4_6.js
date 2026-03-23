@@ -2895,11 +2895,6 @@ function tcpShowSyncModal(payload){
     var m=document.getElementById('merge-pairs-modal');if(!m)return;
     var sumEl=document.getElementById('mpm-summary');
     var confEl=document.getElementById('mpm-conflicts');
-    var sum='';
-    if(result.toAdd.length)sum+=result.toAdd.length+' nuovi da aggiungere. ';
-    if(result.ignored)sum+=result.ignored+' gia presenti ignorati. ';
-    if(result.conflicts.length)sum+=result.conflicts.length+' conflitti da risolvere.';
-    if(!result.toAdd.length&&!result.conflicts.length)sum='Nessuna differenza, tutto gia aggiornato.';
     var pD=payload.pairs||payload;
     var tD=payload.tratte||{toAdd:[],conflicts:[],ignored:0};
     var rD=payload.tariffario||{toAdd:[],conflicts:[],ignored:0};
