@@ -2729,17 +2729,7 @@ function tcpDoMerge(incoming){
             }
         }
         if(!found){toAdd.push(inc);}
-        else if(foundType==='exact'){
-            // Controlla se qualcosa e' cambiato (indirizzo, tappa, delivery)
-            var changed=[];
-            if(t(found.imp.address)!==t(inc.imp.address))changed.push('Indirizzo IMP');
-            if(t(found.exp.address)!==t(inc.exp.address))changed.push('Indirizzo EXP');
-            if(t(found.imp.delivery)!==t(inc.imp.delivery))changed.push('Delivery IMP');
-            if(t(found.exp.delivery)!==t(inc.exp.delivery))changed.push('Delivery EXP');
-            if(t(found.tappa||'')!==t(inc.tappa||''))changed.push('Tappa');
-            if(changed.length){conflicts.push({inc:inc,ex:found,type:'conflict-modified',changed:changed});}
-            else{ignored++;}
-        }
+        else if(foundType==='exact'){ignored++;}
         else{conflicts.push({inc:inc,ex:found,type:foundType});}
     });
     return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
@@ -2748,33 +2738,10 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
     _pushUndo();
     var pairs=lp();
     toAdd.forEach(function(p){pairs.push(p);});
-    var _t2=function(s){return(s||'').trim();};
     conflictResolutions.forEach(function(res){
         if(res.choice==='theirs'){
-            // Cerca per contNr o per carrier+address+delivery (no reference equality)
-            var idx=pairs.findIndex(function(p){
-                var eINr=_t2(res.ex.imp&&res.ex.imp.contNr);
-                var eENr=_t2(res.ex.exp&&res.ex.exp.contNr);
-                var pINr=_t2(p.imp&&p.imp.contNr);
-                var pENr=_t2(p.exp&&p.exp.contNr);
-                if(eINr&&pINr&&eINr===pINr)return true;
-                if(eENr&&pENr&&eENr===pENr)return true;
-                return _t2(p.imp.carrier)===_t2(res.ex.imp.carrier)
-                    &&_t2(p.imp.address)===_t2(res.ex.imp.address)
-                    &&_t2(p.imp.delivery)===_t2(res.ex.imp.delivery);
-            });
-            if(idx<0)return;
-            if(res.type==='conflict-modified'){
-                // Aggiorna campi modificati e azzera km (percorso cambiato)
-                pairs[idx].imp.address=res.inc.imp.address;
-                pairs[idx].imp.delivery=res.inc.imp.delivery;
-                pairs[idx].exp.address=res.inc.exp.address;
-                pairs[idx].exp.delivery=res.inc.exp.delivery;
-                if(res.inc.tappa!==undefined)pairs[idx].tappa=res.inc.tappa;
-                pairs[idx].km=0;
-            }else{
-                pairs[idx]=res.inc;
-            }
+            var idx=pairs.findIndex(function(p){return p===res.ex;});
+            if(idx>=0)pairs[idx]=res.inc;
         }
     });
     sp(pairs);rPairs();rPlanner();
@@ -2945,25 +2912,14 @@ function tcpShowSyncModal(payload){
         if((pD.conflicts||[]).length){
             html+='<div style="font-weight:bold;color:#002856;font-size:12px;margin:8px 0 4px;">Riutilizzi</div>';
             html+=(pD.conflicts||[]).map(function(cf,ci){
-                var _f=cf.type==='conflict-modified'
-                    ?'Riutilizzo modificato: '+cf.changed.join(', ')
-                    :(cf.type==='conflict-exp'?'Nr.EXP diverso':'Nr.IMP diverso');
-                var _badgeColor=cf.type==='conflict-modified'?'#c47a00':'#002856';
+                var _f=cf.type==='conflict-exp'?'Nr.EXP diverso':'Nr.IMP diverso';
                 return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
-                    +'<div style="font-weight:bold;margin-bottom:4px;color:'+_badgeColor+';">'+_f+'</div>'
+                    +'<div style="font-weight:bold;color:#002856;margin-bottom:4px;">'+_f+'</div>'
                     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
                     +'<div style="background:#f0f4fa;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">MIO</div>'
-                    +'<div>'+cf.ex.imp.carrier+' '+cf.ex.imp.cont+'</div>'
-                    +'<div style="font-size:10px;">IMP: '+cf.ex.imp.address+'</div>'
-                    +'<div style="font-size:10px;">EXP: '+cf.ex.exp.address+'</div>'
-                    +(cf.ex.tappa?'<div style="font-size:10px;color:#1a7a1a;">Tappa: '+cf.ex.tappa+'</div>':'')
-                    +'</div>'
+                    +'<div>'+cf.ex.imp.carrier+' '+cf.ex.imp.cont+'</div><div>'+cf.ex.imp.address+'</div></div>'
                     +'<div style="background:#f0f8f0;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">COLLEGA</div>'
-                    +'<div>'+cf.inc.imp.carrier+' '+cf.inc.imp.cont+'</div>'
-                    +'<div style="font-size:10px;">IMP: '+cf.inc.imp.address+'</div>'
-                    +'<div style="font-size:10px;">EXP: '+cf.inc.exp.address+'</div>'
-                    +(cf.inc.tappa?'<div style="font-size:10px;color:#1a7a1a;">Tappa: '+cf.inc.tappa+'</div>':'')
-                    +'</div></div>'
+                    +'<div>'+cf.inc.imp.carrier+' '+cf.inc.imp.cont+'</div><div>'+cf.inc.imp.address+'</div></div></div>'
                     +'<div style="display:flex;gap:6px;">'
                     +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Il mio</span></label>'
                     +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #27ae60;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Collega</span></label>'
@@ -3013,7 +2969,7 @@ function tcpApplyMergePairsModal(){
     // Pairs
     var pRes=(pD.conflicts||[]).map(function(cf,ci){
         var sel=document.querySelector('input[name="mpc'+ci+'"]:checked');
-        return{ex:cf.ex,inc:cf.inc,type:cf.type,choice:sel?sel.value:'mine'};
+        return{ex:cf.ex,inc:cf.inc,choice:sel?sel.value:'mine'};
     });
     tcpApplyMergePairs(pD.toAdd||[],pRes);
     tcpRefresh();
@@ -4241,11 +4197,13 @@ window.tcpApplicaMerge=function(){
 
 <!-- MODAL MERGE RIUTILIZZI -->
 <div id="merge-pairs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10003;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:10px;padding:24px;width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);">
-    <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#8704; Merge Riutilizzi</h3>
-    <p id="mpm-summary" style="font-size:11px;color:#555;margin-bottom:14px;"></p>
-    <div id="mpm-conflicts" style="margin-bottom:14px;"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
+  <div style="background:white;border-radius:10px;width:640px;max-height:85vh;box-shadow:0 8px 32px rgba(0,0,0,.3);display:flex;flex-direction:column;">
+    <div style="padding:24px 24px 0 24px;flex-shrink:0;">
+      <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#8704; Merge Riutilizzi</h3>
+      <p id="mpm-summary" style="font-size:11px;color:#555;margin-bottom:10px;"></p>
+    </div>
+    <div id="mpm-conflicts" style="padding:0 24px;overflow-y:auto;flex:1;min-height:0;margin-bottom:0;"></div>
+    <div style="padding:14px 24px;border-top:1px solid #e0eaf8;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;">
       <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">Annulla</button>
       <button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button>
     </div>
