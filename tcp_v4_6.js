@@ -2748,9 +2748,21 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
     _pushUndo();
     var pairs=lp();
     toAdd.forEach(function(p){pairs.push(p);});
+    var _t2=function(s){return(s||'').trim();};
     conflictResolutions.forEach(function(res){
         if(res.choice==='theirs'){
-            var idx=pairs.findIndex(function(p){return p===res.ex;});
+            // Cerca per contNr o per carrier+address+delivery (no reference equality)
+            var idx=pairs.findIndex(function(p){
+                var eINr=_t2(res.ex.imp&&res.ex.imp.contNr);
+                var eENr=_t2(res.ex.exp&&res.ex.exp.contNr);
+                var pINr=_t2(p.imp&&p.imp.contNr);
+                var pENr=_t2(p.exp&&p.exp.contNr);
+                if(eINr&&pINr&&eINr===pINr)return true;
+                if(eENr&&pENr&&eENr===pENr)return true;
+                return _t2(p.imp.carrier)===_t2(res.ex.imp.carrier)
+                    &&_t2(p.imp.address)===_t2(res.ex.imp.address)
+                    &&_t2(p.imp.delivery)===_t2(res.ex.imp.delivery);
+            });
             if(idx<0)return;
             if(res.type==='conflict-modified'){
                 // Aggiorna campi modificati e azzera km (percorso cambiato)
@@ -3001,7 +3013,7 @@ function tcpApplyMergePairsModal(){
     // Pairs
     var pRes=(pD.conflicts||[]).map(function(cf,ci){
         var sel=document.querySelector('input[name="mpc'+ci+'"]:checked');
-        return{ex:cf.ex,inc:cf.inc,choice:sel?sel.value:'mine'};
+        return{ex:cf.ex,inc:cf.inc,type:cf.type,choice:sel?sel.value:'mine'};
     });
     tcpApplyMergePairs(pD.toAdd||[],pRes);
     tcpRefresh();
