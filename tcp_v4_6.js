@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.3
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2044,23 +2044,23 @@ function updDim(){
 function updAbbina(){
     const btn=document.getElementById('btn-abbina');if(!btn)return;
     const flt=document.getElementById('btn-abbina-float');
-    const dsel=document.getElementById('btn-deselect-float');if(dsel){const onViaggi=document.getElementById('t-viaggi')?.classList.contains('on');dsel.style.display=(selI||selE)&&onViaggi?'block':'none';dsel.style.pointerEvents=(selI||selE)&&onViaggi?'auto':'none';}
-    const editFlt=document.getElementById('btn-edit-float');if(editFlt){const onViaggi2=document.getElementById('t-viaggi')?.classList.contains('on');const selOne=selI||selE;editFlt.style.display=selOne&&onViaggi2?'block':'none';editFlt.style.pointerEvents=selOne&&onViaggi2?'auto':'none';if(selOne)editFlt.onclick=()=>doEdit(selOne.id);}
+    const dsel=document.getElementById('btn-deselect-float');if(dsel){const onViaggi=document.getElementById('t-viaggi')?.classList.contains('on');dsel.style.display=(selI||selE)&&onViaggi?'block':'none';}
+    const editFlt=document.getElementById('btn-edit-float');if(editFlt){const onViaggi2=document.getElementById('t-viaggi')?.classList.contains('on');const selOne=selI||selE;editFlt.style.display=selOne&&onViaggi2?'block':'none';if(selOne)editFlt.onclick=()=>doEdit(selOne.id);}
     if(selI&&selE&&selI.carrier===selE.carrier&&compat(selI.cont,selE.cont)){
         const di=pd(selI.delivery),de=pd(selE.delivery);
         if(di&&de&&de<di){
             btn.style.cssText='display:inline-block;background:#c0392b;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;font-weight:bold;';
             btn.textContent='⚠️ Export prima di Import!';btn.onclick=null;
-            if(flt){flt.style.display='block';flt.style.pointerEvents='none';flt.textContent='⚠️ Export prima di Import!';flt.style.background='#c0392b';flt.onclick=null;}
+            if(flt){flt.style.display='block';flt.textContent='⚠️ Export prima di Import!';flt.style.background='#c0392b';flt.onclick=null;}
         }else{
             btn.style.cssText='display:inline-block;background:#27ae60;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;font-weight:bold;';
             btn.textContent='🔗 Abbina ('+selI.carrier+' · '+selI.cont+' ↔ '+selE.cont+')';
             btn.onclick=doAbbina;
-            if(flt){flt.style.display='block';flt.style.pointerEvents='auto';flt.textContent='🔗 Abbina ('+selI.carrier+' · '+selI.cont+' ↔ '+selE.cont+')';flt.style.background='#27ae60';flt.onclick=doAbbina;}
+            if(flt){flt.style.display='block';flt.textContent='🔗 Abbina ('+selI.carrier+' · '+selI.cont+' ↔ '+selE.cont+')';flt.style.background='#27ae60';flt.onclick=doAbbina;}
         }
     }else{
         btn.style.display='none';
-        if(flt){flt.style.display='none';flt.style.pointerEvents='none';}
+        if(flt)flt.style.display='none';
     }
 }
 
@@ -2892,7 +2892,6 @@ function tcpSyncAndPublish(){
 // -- MODAL MERGE RIUTILIZZI --
 function tcpShowMergePairsModal(result){tcpShowSyncModal({pairs:result,tratte:{toAdd:[],conflicts:[],ignored:0},tariffario:{toAdd:[],conflicts:[],ignored:0}});}
 function tcpShowSyncModal(payload){
-    var m=document.getElementById('merge-pairs-modal');if(!m)return;
     var sumEl=document.getElementById('mpm-summary');
     var confEl=document.getElementById('mpm-conflicts');
     var pD=payload.pairs||payload;
@@ -2958,7 +2957,9 @@ function tcpShowSyncModal(payload){
         if(!html)html='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';
         confEl.innerHTML=html;
     }
-    m.style.display='flex';
+    var tb=document.querySelector('.tb[data-t="conflitti"]');
+    if(tb)tb.style.display='inline-block';
+    showTab('conflitti');
 }
 function tcpApplyMergePairsModal(){
     if(!_mergePayload)return;
@@ -2990,13 +2991,15 @@ function tcpApplyMergePairsModal(){
         if(sel&&sel.value==='theirs'){var ex=tar.find(function(x){return x.km===cf.ex.km;});if(ex){ex.c20=cf.inc.c20;ex.c40=cf.inc.c40;}}
     });
     localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
-    document.getElementById('merge-pairs-modal').style.display='none';
+    var _tbC=document.querySelector('.tb[data-t="conflitti"]');if(_tbC)_tbC.style.display='none';
     _mergePayload=null;
+    showTab('pairs');
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
 }
 function tcpCloseMergePairsModal(){
-    document.getElementById('merge-pairs-modal').style.display='none';
+    var _tbC=document.querySelector('.tb[data-t="conflitti"]');if(_tbC)_tbC.style.display='none';
     _mergePayload=null;
+    showTab('pairs');
 }
 
 function cleanExpired(){
@@ -3680,7 +3683,8 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
     <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💰 Tariffario</button>
     <button class="tb" data-t="report" onclick="showTab('report')" style="margin-left:auto;">&#128202; Report</button>
-    <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
+    <button class="tb" data-t="conflitti" onclick="showTab('conflitti')" style="display:none;color:#c0392b;font-weight:bold;">&#128260; Conflitti</button>
+  <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
 </div>
 
 <div id="t-viaggi" class="tc on" style="flex:1;flex-direction:column;overflow:hidden;min-height:0;">
@@ -3867,6 +3871,18 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
 </div>
 
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
+
+<div id="t-conflitti" class="tc" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
+  <div style="padding:14px 18px 10px;border-bottom:2px solid #e0eaf8;flex-shrink:0;background:#fff8f0;">
+    <div style="font-weight:bold;font-size:14px;color:#c0392b;margin-bottom:4px;">&#128260; Merge da collega</div>
+    <p id="mpm-summary" style="font-size:12px;color:#555;margin:0;"></p>
+  </div>
+  <div id="mpm-conflicts" style="flex:1;overflow-y:auto;padding:12px 18px;min-height:0;"></div>
+  <div style="padding:12px 18px;border-top:2px solid #e0eaf8;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:white;">
+    <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:8px 20px;cursor:pointer;font-size:12px;">Annulla</button>
+    <button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:5px;padding:8px 20px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -4150,11 +4166,11 @@ window.tcpApplicaMerge=function(){
 </div>
 
 <!-- FLOATING BUTTONS -->
-<button id="btn-edit-float" style="display:none;position:fixed;bottom:24px;right:20px;background:#27ae60;color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:9999;pointer-events:none;">✏️ Modifica</button>
+<button id="btn-edit-float" style="display:none;position:fixed;bottom:24px;right:20px;background:#27ae60;color:white;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:9999;">✏️ Modifica</button>
 
-<button id="btn-deselect-float" style="display:none;position:fixed;bottom:24px;left:20px;background:#e67e22;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:9999;pointer-events:none;" onclick="doDeselect()">✕ Annulla selezione</button>
+<button id="btn-deselect-float" style="display:none;position:fixed;bottom:24px;left:20px;background:#e67e22;color:white;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:11px;font-weight:bold;box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:9999;" onclick="doDeselect()">✕ Annulla selezione</button>
 
-<button id="btn-abbina-float" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27ae60;color:white;border:none;border-radius:6px;padding:10px 28px;cursor:pointer;font-size:13px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:9999;pointer-events:none;">🔗 Abbina</button>
+<button id="btn-abbina-float" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#27ae60;color:white;border:none;border-radius:6px;padding:10px 28px;cursor:pointer;font-size:13px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.25);z-index:9999;">🔗 Abbina</button>
 
 
 <!-- MODAL MERGE TRATTE -->
@@ -4171,7 +4187,7 @@ window.tcpApplicaMerge=function(){
 </div>
 
 <!-- MODAL GIST SETTINGS -->
-<div id="gist-settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99998;align-items:center;justify-content:center;">
+<div id="gist-settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10003;align-items:center;justify-content:center;">
   <div style="background:white;border-radius:10px;padding:24px;min-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.3);">
     <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#9881; Impostazioni Gist GitHub</h3>
     <p style="font-size:11px;color:#888;margin-bottom:14px;">Crea un Personal Access Token su GitHub (Settings &rarr; Developer settings &rarr; Fine-grained tokens) con scope <b>Gist</b>. Il Gist ID viene generato automaticamente alla prima pubblicazione.</p>
@@ -4191,19 +4207,6 @@ window.tcpApplicaMerge=function(){
       <span id="gist-save-note" style="font-size:11px;color:#27ae60;margin-right:auto;"></span>
       <button onclick="tcpCloseGistSettings()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">Annulla</button>
       <button onclick="tcpSaveGistSettings()" style="background:#002856;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Salva</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL MERGE RIUTILIZZI -->
-<div id="merge-pairs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99998;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:10px;padding:24px;width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);">
-    <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#8704; Merge Riutilizzi</h3>
-    <p id="mpm-summary" style="font-size:11px;color:#555;margin-bottom:14px;"></p>
-    <div id="mpm-conflicts" style="margin-bottom:14px;"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">Annulla</button>
-      <button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button>
     </div>
   </div>
 </div>
