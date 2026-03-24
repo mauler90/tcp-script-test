@@ -1854,6 +1854,7 @@ function showTab(t){
         const active=c.id==='t-'+t;
         c.classList.toggle('on',active);
         if(c.id==='t-viaggi')c.style.display=active?'flex':'none';
+        if(c.id==='t-conflitti')c.style.display=active?'flex':'none';
     });
     const dsel=document.getElementById('btn-deselect-float');if(dsel)dsel.style.display='none';
     const editFlt2=document.getElementById('btn-edit-float');if(editFlt2)editFlt2.style.display='none';
@@ -2957,8 +2958,8 @@ function tcpShowSyncModal(payload){
         if(!html)html='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';
         confEl.innerHTML=html;
     }
-    var tb=document.querySelector('.tb[data-t="conflitti"]');
-    if(tb)tb.style.display='inline-block';
+    var _tbConf=document.querySelector('.tb[data-t="conflitti"]');
+    if(_tbConf)_tbConf.style.display='inline-block';
     showTab('conflitti');
 }
 function tcpApplyMergePairsModal(){
@@ -2991,13 +2992,15 @@ function tcpApplyMergePairsModal(){
         if(sel&&sel.value==='theirs'){var ex=tar.find(function(x){return x.km===cf.ex.km;});if(ex){ex.c20=cf.inc.c20;ex.c40=cf.inc.c40;}}
     });
     localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
-    var _tbC=document.querySelector('.tb[data-t="conflitti"]');if(_tbC)_tbC.style.display='none';
+    var _tbC=document.querySelector('.tb[data-t="conflitti"]');
+    if(_tbC){_tbC.style.display='none';}
     _mergePayload=null;
     showTab('pairs');
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
 }
 function tcpCloseMergePairsModal(){
-    var _tbC=document.querySelector('.tb[data-t="conflitti"]');if(_tbC)_tbC.style.display='none';
+    var _tbC=document.querySelector('.tb[data-t="conflitti"]');
+    if(_tbC){_tbC.style.display='none';}
     _mergePayload=null;
     showTab('pairs');
 }
@@ -3683,8 +3686,8 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
     <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💰 Tariffario</button>
     <button class="tb" data-t="report" onclick="showTab('report')" style="margin-left:auto;">&#128202; Report</button>
-    <button class="tb" data-t="conflitti" onclick="showTab('conflitti')" style="display:none;color:#c0392b;font-weight:bold;">&#128260; Conflitti</button>
-  <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
+    <button class="tb" data-t="conflitti" onclick="showTab('conflitti')" style="display:none;background:#fff0f0;color:#c0392b;font-weight:bold;border-bottom:3px solid transparent;">&#128260; Conflitti</button>
+    <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
 </div>
 
 <div id="t-viaggi" class="tc on" style="flex:1;flex-direction:column;overflow:hidden;min-height:0;">
@@ -3872,10 +3875,10 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
 
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
 
-<div id="t-conflitti" class="tc" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
-  <div style="padding:14px 18px 10px;border-bottom:2px solid #e0eaf8;flex-shrink:0;background:#fff8f0;">
-    <div style="font-weight:bold;font-size:14px;color:#c0392b;margin-bottom:4px;">&#128260; Merge da collega</div>
-    <p id="mpm-summary" style="font-size:12px;color:#555;margin:0;"></p>
+<div id="t-conflitti" class="tc" style="display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;">
+  <div style="padding:14px 18px 10px;border-bottom:2px solid #f8d7da;flex-shrink:0;background:#fff8f0;">
+    <b style="font-size:13px;color:#c0392b;">&#128260; Merge da collega</b>
+    <p id="mpm-summary" style="font-size:12px;color:#555;margin:4px 0 0 0;"></p>
   </div>
   <div id="mpm-conflicts" style="flex:1;overflow-y:auto;padding:12px 18px;min-height:0;"></div>
   <div style="padding:12px 18px;border-top:2px solid #e0eaf8;display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:white;">
