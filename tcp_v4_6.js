@@ -2892,9 +2892,9 @@ function tcpSyncAndPublish(){
 // -- MODAL MERGE RIUTILIZZI --
 function tcpShowMergePairsModal(result){tcpShowSyncModal({pairs:result,tratte:{toAdd:[],conflicts:[],ignored:0},tariffario:{toAdd:[],conflicts:[],ignored:0}});}
 function tcpShowSyncModal(payload){
-    var m=document.getElementById('merge-pairs-modal');if(!m)return;
-    var sumEl=document.getElementById('mpm-summary');
-    var confEl=document.getElementById('mpm-conflicts');
+    showTab('syncreport');
+    var sumEl=document.getElementById('sr-summary');
+    var confEl=document.getElementById('sr-conflicts');
     var pD=payload.pairs||payload;
     var tD=payload.tratte||{toAdd:[],conflicts:[],ignored:0};
     var rD=payload.tariffario||{toAdd:[],conflicts:[],ignored:0};
@@ -2958,7 +2958,6 @@ function tcpShowSyncModal(payload){
         if(!html)html='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';
         confEl.innerHTML=html;
     }
-    m.style.display='flex';
 }
 function tcpApplyMergePairsModal(){
     if(!_mergePayload)return;
@@ -2990,13 +2989,19 @@ function tcpApplyMergePairsModal(){
         if(sel&&sel.value==='theirs'){var ex=tar.find(function(x){return x.km===cf.ex.km;});if(ex){ex.c20=cf.inc.c20;ex.c40=cf.inc.c40;}}
     });
     localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
-    document.getElementById('merge-pairs-modal').style.display='none';
     _mergePayload=null;
+    var srEl=document.getElementById('sr-conflicts');
+    if(srEl)srEl.innerHTML='<p style="color:#27ae60;font-size:12px;padding:20px;text-align:center;">&#10003; Sync applicato.</p>';
+    var srSum=document.getElementById('sr-summary');
+    if(srSum)srSum.textContent='';
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
 }
 function tcpCloseMergePairsModal(){
-    document.getElementById('merge-pairs-modal').style.display='none';
     _mergePayload=null;
+    var srEl=document.getElementById('sr-conflicts');
+    if(srEl)srEl.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px;text-align:center;">Sync annullato.</p>';
+    var srSum=document.getElementById('sr-summary');
+    if(srSum)srSum.textContent='';
 }
 
 function cleanExpired(){
@@ -3867,7 +3872,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     ${tarHtml}
 </div>
 
-<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b></div><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun evento di sync registrato.</p></div>
+<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
 
 <script>
@@ -4197,18 +4202,7 @@ window.tcpApplicaMerge=function(){
   </div>
 </div>
 
-<!-- MODAL MERGE RIUTILIZZI -->
-<div id="merge-pairs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10003;align-items:center;justify-content:center;">
-  <div style="background:white;border-radius:10px;padding:24px;width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);">
-    <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#8704; Merge Riutilizzi</h3>
-    <p id="mpm-summary" style="font-size:11px;color:#555;margin-bottom:14px;"></p>
-    <div id="mpm-conflicts" style="margin-bottom:14px;"></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">Annulla</button>
-      <button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button>
-    </div>
-  </div>
-</div>
+
 
 </body></html>`;
 }
