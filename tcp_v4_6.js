@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.2
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2892,10 +2892,9 @@ function tcpSyncAndPublish(){
 // -- MODAL MERGE RIUTILIZZI --
 function tcpShowMergePairsModal(result){tcpShowSyncModal({pairs:result,tratte:{toAdd:[],conflicts:[],ignored:0},tariffario:{toAdd:[],conflicts:[],ignored:0}});}
 function tcpShowSyncModal(payload){
+    var m=document.getElementById('merge-pairs-modal');if(!m)return;
     var sumEl=document.getElementById('mpm-summary');
     var confEl=document.getElementById('mpm-conflicts');
-    var mergeTab=document.querySelector('.tb[data-t="merge"]');
-    if(mergeTab)mergeTab.style.display='inline-block';
     var pD=payload.pairs||payload;
     var tD=payload.tratte||{toAdd:[],conflicts:[],ignored:0};
     var rD=payload.tariffario||{toAdd:[],conflicts:[],ignored:0};
@@ -2959,7 +2958,7 @@ function tcpShowSyncModal(payload){
         if(!html)html='<p style="color:#27ae60;font-size:12px;">Nessun conflitto.</p>';
         confEl.innerHTML=html;
     }
-    showTab('merge');
+    m.style.display='flex';
 }
 function tcpApplyMergePairsModal(){
     if(!_mergePayload)return;
@@ -2991,17 +2990,13 @@ function tcpApplyMergePairsModal(){
         if(sel&&sel.value==='theirs'){var ex=tar.find(function(x){return x.km===cf.ex.km;});if(ex){ex.c20=cf.inc.c20;ex.c40=cf.inc.c40;}}
     });
     localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
-    var mergeTab=document.querySelector('.tb[data-t="merge"]');
-    if(mergeTab)mergeTab.style.display='none';
+    document.getElementById('merge-pairs-modal').style.display='none';
     _mergePayload=null;
-    showTab('pairs');
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
 }
 function tcpCloseMergePairsModal(){
-    var mergeTab=document.querySelector('.tb[data-t="merge"]');
-    if(mergeTab)mergeTab.style.display='none';
+    document.getElementById('merge-pairs-modal').style.display='none';
     _mergePayload=null;
-    showTab('pairs');
 }
 
 function cleanExpired(){
@@ -3684,8 +3679,8 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     <button class="tb" data-t="planner" onclick="showTab('planner')">📅 Planner</button>
     <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
     <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💰 Tariffario</button>
+    <button class="tb" data-t="syncreport" onclick="showTab('syncreport')">&#128260; Sync Report</button>
     <button class="tb" data-t="report" onclick="showTab('report')" style="margin-left:auto;">&#128202; Report</button>
-    <button class="tb" data-t="merge" onclick="showTab('merge')" style="display:none;background:#e67e22;color:white;font-weight:bold;">&#8704; Merge</button>
     <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
 </div>
 
@@ -3872,6 +3867,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     ${tarHtml}
 </div>
 
+<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b></div><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun evento di sync registrato.</p></div>
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
 
 <script>
@@ -4201,21 +4197,18 @@ window.tcpApplicaMerge=function(){
   </div>
 </div>
 
-<!-- TAB MERGE -->
-<div id="t-merge" class="tc" style="flex:1;overflow-y:auto;padding:16px 20px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <h3 style="margin:0;color:#e67e22;font-size:14px;">&#8704; Merge &mdash; Sincronizzazione Collega</h3>
-    <div style="display:flex;gap:8px;">
-      <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">&#10005; Annulla</button>
+<!-- MODAL MERGE RIUTILIZZI -->
+<div id="merge-pairs-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10003;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:10px;padding:24px;width:640px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.3);">
+    <h3 style="margin:0 0 6px;color:#002856;font-size:14px;">&#8704; Merge Riutilizzi</h3>
+    <p id="mpm-summary" style="font-size:11px;color:#555;margin-bottom:14px;"></p>
+    <div id="mpm-conflicts" style="margin-bottom:14px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;">Annulla</button>
       <button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button>
     </div>
   </div>
-  <p id="mpm-summary" style="font-size:12px;color:#555;background:#f0f4fa;border:1px solid #d0dff0;border-radius:5px;padding:8px 14px;margin-bottom:14px;"></p>
-  <div id="mpm-conflicts"></div>
 </div>
-
-<!-- MODAL MERGE RIUTILIZZI (stub vuoto per compatibilita) -->
-<div id="merge-pairs-modal" style="display:none;"></div>
 
 </body></html>`;
 }
