@@ -1650,7 +1650,7 @@ function buildReportHtml(pairs, orders) {
     return s1+s2+s3+s4;
 }
 function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
-    const pid  = pids();
+    const pid  = pairedIds();
     const nset = new Set(newIds);
     const mset = new Set(modIds || []);
     const pairs = ls.pairs();
