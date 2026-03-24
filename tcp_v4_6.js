@@ -2991,7 +2991,7 @@ function tcpApplyMergePairsModal(){
     localStorage.setItem('tcp_tariffario',JSON.stringify(tar));
     _mergePayload=null;
     var srEl=document.getElementById('sr-conflicts');
-    if(srEl)srEl.innerHTML='<p style="color:#27ae60;font-size:12px;padding:20px;text-align:center;">&#10003; Sync applicato.</p>';
+    if(srEl)srEl.innerHTML="<p style='color:#27ae60;font-size:12px;padding:20px;text-align:center;'>&#10003; Sync applicato.</p>";
     var srSum=document.getElementById('sr-summary');
     if(srSum)srSum.textContent='';
     if(autoPublish){setTimeout(function(){tcpPublishGist();},400);}
@@ -2999,7 +2999,7 @@ function tcpApplyMergePairsModal(){
 function tcpCloseMergePairsModal(){
     _mergePayload=null;
     var srEl=document.getElementById('sr-conflicts');
-    if(srEl)srEl.innerHTML='<p style="color:#aaa;font-size:12px;padding:20px;text-align:center;">Sync annullato.</p>';
+    if(srEl)srEl.innerHTML="<p style='color:#aaa;font-size:12px;padding:20px;text-align:center;'>Sync annullato.</p>";
     var srSum=document.getElementById('sr-summary');
     if(srSum)srSum.textContent='';
 }
