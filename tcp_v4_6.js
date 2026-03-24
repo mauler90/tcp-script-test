@@ -1650,7 +1650,7 @@ function buildReportHtml(pairs, orders) {
     return s1+s2+s3+s4;
 }
 function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
-    const pid  = pairedIds();
+    const pid  = pids();
     const nset = new Set(newIds);
     const mset = new Set(modIds || []);
     const pairs = ls.pairs();
@@ -2157,7 +2157,7 @@ function tcpMaskTime(el){var v=el.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.
 // ── REFRESH TABELLA ──
 function tcpRefresh(){
     const orders=lo();
-    const pid=pairedIds();
+    const pid=pids();
     orders.forEach(o=>{
         const sid=o.id.replace(/[^a-z0-9]/gi,'_');
         const row=document.getElementById('row-'+sid);
@@ -2293,7 +2293,7 @@ function saveAddManual(){
     // Ricostruisce solo il tbody senza rebuild completo
     const tbody=document.getElementById('tbody');
     if(tbody){
-        const pid=pairedIds();
+        const pid=pids();
         const nset=new Set();
         const o=orders[0];
         const sid=o.id.replace(/[^a-z0-9]/gi,'_');
