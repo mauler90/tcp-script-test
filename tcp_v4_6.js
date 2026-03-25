@@ -1452,8 +1452,9 @@ function collect(intervalMin, carriers, containers) {
             });
             if (changes.length > 0) {
                 var existing = alerts[key];
-                var newTooltip = changes.join('\n');
-                if (!existing || existing.tooltip !== newTooltip) {
+                var newTooltip = changes.join(' | ');
+                if (existing && existing.dismissed && existing.dismissedTooltip === newTooltip) {
+                } else if (!existing || existing.tooltip !== newTooltip) {
                     alerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
                 }
             } else {
@@ -2437,7 +2438,7 @@ function buildPairsHtml(){
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
                 var _al=_alerts[String(realIdx)];
                 var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _alSpan='<span onclick="tcpDismissPairAlert('+realIdx+')" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato</span>';
+                var _alSpan='<span onclick="tcpDismissPairAlert('+realIdx+',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
                 var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
@@ -2710,6 +2711,13 @@ function rmPair(i){
             localStorage.setItem('tcp_stats',JSON.stringify(_dSt));
         }
     }
+    if(p){
+        var removed=[];
+        try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
+        var rKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
+        if(!removed.includes(rKey))removed.push(rKey);
+        localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
+    }
     pairs.splice(i,1);sp(pairs);rPairs();rPlanner();
 }
 // -- GIST SETTINGS --
@@ -2753,7 +2761,11 @@ function tcpDoMerge(incoming){
     var existing=lp();
     var toAdd=[];var conflicts=[];var ignored=0;
     var t=function(s){return(s||'').trim();};
+    var removed=[];
+    try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
     incoming.forEach(function(inc){
+        var rKey=(t(inc.imp&&inc.imp.contNr)||t(inc.imp&&inc.imp.id))+'|'+(t(inc.exp&&inc.exp.contNr)||t(inc.exp&&inc.exp.id));
+        if(removed.includes(rKey)){ignored++;return;}
         var iNr=t(inc.imp&&inc.imp.contNr);
         var eNr=t(inc.exp&&inc.exp.contNr);
         var found=null;var foundType=null;
@@ -3729,10 +3741,14 @@ function tcpToast(msg,duration){
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
-function tcpDismissPairAlert(idx){
+function tcpDismissPairAlert(idx,ev){
+    if(ev){ev.stopPropagation();ev.preventDefault();}
     var alerts={};
     try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-    if(alerts[idx]){alerts[idx].dismissed=true;}
+    if(alerts[idx]){
+        alerts[idx].dismissed=true;
+        alerts[idx].dismissedTooltip=alerts[idx].tooltip;
+    }
     localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
     rPairs();
 }
