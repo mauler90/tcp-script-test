@@ -2772,12 +2772,10 @@ function tcpPublishGist(){
     var pairs=lp();
     var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
     var alias=[];try{alias=JSON.parse(localStorage.getItem('tcp_tratte_alias')||'[]');}catch(e){}
-    var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
     var files={
         'tcp_pairs.json':{content:JSON.stringify({version:1,exported:ts,pairs:pairs},null,2)},
         'tcp_tratte.json':{content:JSON.stringify({version:1,exported:ts,tratte:tratte},null,2)},
-        'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)},
-        'tcp_tariffario.json':{content:JSON.stringify({version:1,exported:ts,tariffario:tar},null,2)}
+        'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)}
     };
     var body=JSON.stringify({description:'S.R.C sync',public:false,files:files});
     var url=gid?'https://api.github.com/gists/'+gid:'https://api.github.com/gists';
@@ -2857,12 +2855,7 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
                 var aa=JSON.parse(data.files['tcp_alias.json'].content);
                 if(aa.alias)tcpDoMergeAlias(aa.alias);
             }
-            var tarResult={toAdd:[],conflicts:[],ignored:0};
-            if(data.files['tcp_tariffario.json']){
-                var tr=JSON.parse(data.files['tcp_tariffario.json'].content);
-                if(tr.tariffario)tarResult=tcpDoMergeTariffario(tr.tariffario);
-            }
-            _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:tarResult,source:'gist',autoPublish:autoPublish};
+            _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:{toAdd:[],conflicts:[],ignored:0},source:'gist',autoPublish:autoPublish};
             tcpSetPairsBadge(0);
             tcpShowSyncModal(_mergePayload);
         })
@@ -4305,7 +4298,9 @@ function tcpToggleAutoGist(mode) {
 
 function buildWidget() {
     if (document.getElementById('tcp-mon-widget')) return;
-    const state = ss.load();
+    let state = ss.load();
+    if(!state){state={autoGist:'syncpub'};ss.save(state);}
+    else if(!state.autoGist){state.autoGist='syncpub';ss.save(state);}
     const run = state?.running || false;
     const box = document.createElement('div');
     box.id = 'tcp-mon-widget';
