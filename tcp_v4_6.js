@@ -1333,16 +1333,23 @@ function collect(intervalMin, carriers, containers) {
             const id       = contNr || (traffic + created + rawCarrier);
             const _exO = existing.find(x => x.id === id);
             if (_exO) {
-                const _dlvN  = cr.querySelector('td:nth-child(6)')?.innerText.trim() || '';
-                const _plN   = cr.querySelector('td:nth-child(7)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
-                const _pdN   = cr.querySelector('td:nth-child(8)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
-                const _portN = traffic.toLowerCase() === 'import' ? _pdN : _plN;
-                const _ldvN  = cr.querySelector('td:nth-child(12)')?.innerText.trim() || '';
-                if (_exO.delivery !== _dlvN || _exO.port !== _portN || _exO.ldv !== _ldvN || _exO.address !== address) {
+                const _dlvN     = cr.querySelector('td:nth-child(6)')?.innerText.trim() || '';
+                const _plN      = cr.querySelector('td:nth-child(7)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
+                const _pdN      = cr.querySelector('td:nth-child(8)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
+                const _portN    = traffic.toLowerCase() === 'import' ? _pdN : _plN;
+                const _ldvN     = cr.querySelector('td:nth-child(12)')?.innerText.trim() || '';
+                const _carrierN = ncr(rawCarrier) || _exO.carrier;
+                const _contN    = nct(rawCont) || _exO.cont;
+                if (_exO.delivery !== _dlvN || _exO.port !== _portN || _exO.ldv !== _ldvN ||
+                    _exO.address !== address || _exO.carrier !== _carrierN || _exO.cont !== _contN ||
+                    _exO.branch !== branch) {
                     _exO.delivery   = _dlvN;
                     _exO.port       = _portN;
                     _exO.ldv        = _ldvN;
                     _exO.address    = address;
+                    _exO.carrier    = _carrierN;
+                    _exO.cont       = _contN;
+                    _exO.branch     = branch;
                     _exO.isModified = true;
                     _exO.modifiedAt = now.toISOString();
                 }
@@ -2885,20 +2892,28 @@ function tcpSyncAndPublish(){
 // -- MODAL MERGE RIUTILIZZI --
 function tcpShowMergePairsModal(result){tcpShowSyncModal({pairs:result,tratte:{toAdd:[],conflicts:[],ignored:0},tariffario:{toAdd:[],conflicts:[],ignored:0}});}
 function tcpShowSyncModal(payload){
-    showTab('syncreport');
-    var sumEl=document.getElementById('sr-summary');
-    var confEl=document.getElementById('sr-conflicts');
     var pD=payload.pairs||payload;
     var tD=payload.tratte||{toAdd:[],conflicts:[],ignored:0};
     var rD=payload.tariffario||{toAdd:[],conflicts:[],ignored:0};
     var totNew=(pD.toAdd||[]).length+(tD.toAdd||[]).length+(rD.toAdd||[]).length;
     var totConf=(pD.conflicts||[]).length+(tD.conflicts||[]).length+(rD.conflicts||[]).length;
     var totIgn=(pD.ignored||0)+(tD.ignored||0)+(rD.ignored||0);
+    // Se non ci sono conflitti: applica automaticamente e mostra toast
+    if(totConf===0){
+        _mergePayload=payload;
+        tcpApplyMergePairsModal();
+        var msg=totNew>0?('\u2713 Sync: +'+totNew+' nuovi aggiunti automaticamente.'):'\u2713 Sync: tutto aggiornato.';
+        tcpToast(msg,4000);
+        return;
+    }
+    // Ci sono conflitti: apri la tab
+    showTab('syncreport');
+    var sumEl=document.getElementById('sr-summary');
+    var confEl=document.getElementById('sr-conflicts');
     var sum='';
     if(totNew)sum+=totNew+' nuovi da aggiungere. ';
     if(totIgn)sum+=totIgn+' gia presenti ignorati. ';
     if(totConf)sum+=totConf+' conflitti da risolvere.';
-    if(!totNew&&!totConf)sum='Nessuna differenza, tutto gia aggiornato.';
     if(sumEl)sumEl.textContent=sum;
     if(confEl){
         var html='';
