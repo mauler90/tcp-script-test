@@ -2436,7 +2436,9 @@ function buildPairsHtml(){
                 var _alerts={};
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
                 var _al=_alerts[String(realIdx)];
-                var _alBadge=(_al&&!_al.dismissed)?('<span onclick="tcpDismissPairAlert('+realIdx+')" title="'+_al.tooltip.replace(/"/g,'&#34;').replace(/\n/g,' | ')+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;flex-shrink:0;">\u26a0\ufe0f Modificato</span>'):'';
+                var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
+                var _alSpan='<span onclick="tcpDismissPairAlert('+realIdx+')" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato</span>';
+                var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
                     \${_alBadge}<span class="tag imp">📥 IMP</span>
