@@ -3675,7 +3675,8 @@ function tcpSaveFilters(){
         co:[...document.querySelectorAll('.fs-co:checked')].map(x=>x.value),
         t:[...document.querySelectorAll('.fs-t:checked')].map(x=>x.value),
         p:[...document.querySelectorAll('.fs-p:checked')].map(x=>x.value),
-        hl:document.getElementById('fs-hl')?.checked||false
+        hl:document.getElementById('fs-hl')?.checked||false,
+        rt:document.getElementById('toggle-rt')?.checked!==false
     };
     localStorage.setItem('tcp_saved_filters',JSON.stringify(f));
     var n=document.getElementById('fs-save-note');
@@ -3685,6 +3686,7 @@ function tcpResetSavedFilters(){
     localStorage.removeItem('tcp_saved_filters');
     document.querySelectorAll('.fs-c,.fs-co,.fs-t,.fs-p').forEach(function(x){x.checked=false;});
     var hl=document.getElementById('fs-hl');if(hl)hl.checked=false;
+    var rt=document.getElementById('toggle-rt');if(rt){rt.checked=true;tcpToggleRT();}
     applyShowOnly();
     var n=document.getElementById('fs-save-note');
     if(n){n.textContent='Reset effettuato';setTimeout(function(){n.textContent='';},2000);}
@@ -3698,6 +3700,8 @@ function tcpRestoreSavedFilters(){
         document.querySelectorAll('.fs-t').forEach(function(x){x.checked=(f.t||[]).includes(x.value);});
         document.querySelectorAll('.fs-p').forEach(function(x){x.checked=(f.p||[]).includes(x.value);});
         var hl=document.getElementById('fs-hl');if(hl)hl.checked=f.hl||false;
+        var rt=document.getElementById('toggle-rt');
+        if(rt){rt.checked=f.rt!==false;tcpToggleRT();}
         applyShowOnly();
     }catch(e){}
 }
