@@ -3673,7 +3673,39 @@ function tcpToast(msg,duration){
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
-document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');setTimeout(updCounter,300);setTimeout(updCounter,800);setTimeout(function(){
+function tcpSaveFilters(){
+    var f={
+        c:[...document.querySelectorAll('.fs-c:checked')].map(x=>x.value),
+        co:[...document.querySelectorAll('.fs-co:checked')].map(x=>x.value),
+        t:[...document.querySelectorAll('.fs-t:checked')].map(x=>x.value),
+        p:[...document.querySelectorAll('.fs-p:checked')].map(x=>x.value),
+        hl:document.getElementById('fs-hl')?.checked||false
+    };
+    localStorage.setItem('tcp_saved_filters',JSON.stringify(f));
+    var n=document.getElementById('fs-save-note');
+    if(n){n.textContent='Salvato';setTimeout(function(){n.textContent='';},2000);}
+}
+function tcpResetSavedFilters(){
+    localStorage.removeItem('tcp_saved_filters');
+    document.querySelectorAll('.fs-c,.fs-co,.fs-t,.fs-p').forEach(function(x){x.checked=false;});
+    var hl=document.getElementById('fs-hl');if(hl)hl.checked=false;
+    applyShowOnly();
+    var n=document.getElementById('fs-save-note');
+    if(n){n.textContent='Reset effettuato';setTimeout(function(){n.textContent='';},2000);}
+}
+function tcpRestoreSavedFilters(){
+    var raw=localStorage.getItem('tcp_saved_filters');if(!raw)return;
+    try{
+        var f=JSON.parse(raw);
+        document.querySelectorAll('.fs-c').forEach(function(x){x.checked=(f.c||[]).includes(x.value);});
+        document.querySelectorAll('.fs-co').forEach(function(x){x.checked=(f.co||[]).includes(x.value);});
+        document.querySelectorAll('.fs-t').forEach(function(x){x.checked=(f.t||[]).includes(x.value);});
+        document.querySelectorAll('.fs-p').forEach(function(x){x.checked=(f.p||[]).includes(x.value);});
+        var hl=document.getElementById('fs-hl');if(hl)hl.checked=f.hl||false;
+        applyShowOnly();
+    }catch(e){}
+}
+document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');tcpRestoreSavedFilters();setTimeout(updCounter,300);setTimeout(updCounter,800);setTimeout(function(){
         tcpCheckCollegaSilent();
         var _ci=parseInt(localStorage.getItem('tcp_gist_check_interval')||'0');
         if(_ci>0)tcpStartAutoCheck(_ci);
@@ -3692,8 +3724,8 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     <button class="tb" data-t="planner" onclick="showTab('planner')">📅 Planner</button>
     <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
     <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💰 Tariffario</button>
-    <button class="tb" data-t="syncreport" onclick="showTab('syncreport')">&#128260; Sync Report</button>
-    <button class="tb" data-t="report" onclick="showTab('report')" style="margin-left:auto;">&#128202; Report</button>
+    <button class="tb" data-t="report" onclick="showTab('report')">&#128202; Stats</button>
+    <button class="tb" data-t="syncreport" onclick="showTab('syncreport')" style="margin-left:auto;">&#128260; Sync Report</button>
     <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
 </div>
 
@@ -3727,6 +3759,10 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" class="fs-p" value="genova" onchange="applyShowOnly()"> GOA</label>
         &nbsp;|&nbsp;
         <label style="display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" id="fs-hl" onchange="applyShowOnly()"> \u2605 Evidenziati</label>
+        &nbsp;|&nbsp;
+        <button onclick="tcpSaveFilters()" style="background:#002856;color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:bold;" title="Salva filtri attivi come predefiniti">&#128190; Salva</button>
+        <button onclick="tcpResetSavedFilters()" style="background:#a93226;color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;" title="Cancella filtri salvati">&#128465; Reset</button>
+        <span id="fs-save-note" style="font-size:10px;color:#27ae60;"></span>
     </div>
     <div class="actions">
         <button id="btn-clear" onclick="clearAll()">✕ Svuota lista</button>
@@ -3880,8 +3916,8 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     ${tarHtml}
 </div>
 
-<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
+<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
 
 <script>
 (function(){
