@@ -2559,8 +2559,6 @@ function _pushUndo(){
     s.push(JSON.stringify(lp()));
     if(s.length>5)s.shift();
     _setUndoStack(s);
-    var btn=document.getElementById('btn-undo');
-    if(btn)btn.style.display='inline-block';
 }
 function tcpUndo(){
     var s=_getUndoStack();
@@ -2568,11 +2566,9 @@ function tcpUndo(){
     sp(JSON.parse(s.pop()));
     _setUndoStack(s);
     rPairs();
-    var btn=document.getElementById('btn-undo');
-    if(btn)btn.style.display=s.length?'inline-block':'none';
 }
 // Ripristina visibilità bottone undo al caricamento
-(function(){if(_getUndoStack().length){var b=document.getElementById('btn-undo');if(b)b.style.display='inline-block';}})();
+
 function tcpCopiaExcel(i){
     const p=lp()[i];if(!p)return;
     function _carrier(s){var m={'MSC':'MSC','Hapag':'HAPAG','ONE':'ONE','CMA':'CMA','OOCL':'OOCL','ZIM':'ZIM','Yang Ming':'YANG MING','Maersk':'MAERSK'};return m[s]||s||'';}
@@ -3724,10 +3720,9 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
     <button class="tb" data-t="planner" onclick="showTab('planner')">📅 Planner</button>
     <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
     <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💰 Tariffario</button>
-    <button class="tb" data-t="report" onclick="showTab('report')">&#128202; Stats</button>
-    <button class="tb" data-t="syncreport" onclick="showTab('syncreport')" style="margin-left:auto;">&#128260; Sync Report</button>
-    <button id="btn-undo" onclick="tcpUndo()" style="display:none;margin-left:auto;background:#e67e22;color:white;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:bold;flex-shrink:0;">↩ Annulla</button>
-</div>
+    <button class="tb" data-t="report" onclick="showTab('report')" style="margin-left:auto;">&#128202; Stats</button>
+    <button class="tb" data-t="syncreport" onclick="showTab('syncreport')">&#128260; Sync Report</button>
+  </div>
 
 <div id="t-viaggi" class="tc on" style="flex:1;flex-direction:column;overflow:hidden;min-height:0;">
     <div id="notif-banner"></div>
@@ -3774,6 +3769,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         <input id="search-viaggi" type="text" placeholder="container, indirizzo, porto..." style="border:1px solid #aac4e0;border-radius:4px;padding:4px 10px;font-size:11px;width:260px;margin-left:8px;">
         <button onclick="tcpSearchViaggi(document.getElementById('search-viaggi').value)" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">🔍 Cerca</button>
         <button onclick="document.getElementById('search-viaggi').value='';tcpSearchViaggi('');" style="background:#888;color:white;border:none;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:11px;">✕ Pulisci</button>
+        <button id="btn-undo" onclick="tcpUndo()" style="background:#e67e22;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:bold;" title="Annulla ultima operazione">↩ Annulla</button>
         <span id="visible-count" style="margin-left:auto;font-size:11px;color:#555;white-space:nowrap;font-weight:bold;"></span>
     </div>
     <div id="mt-scroll" style="overflow-y:auto;flex:1;min-height:0;">
