@@ -1421,9 +1421,48 @@ function collect(intervalMin, carriers, containers) {
         if (pairsChanged) ls.savePairs(pairs);
     }
 
-    // newIds = solo quelli dentro la finestra temporale (usato per badge NEW e contatore)
+    // newIds = solo quelli dentro la finestra temporale
     const newIds = fresh.filter(o => o.isNew).map(o => o.id);
     const modIds = merged.filter(o => o.isModified).map(o => o.id);
+
+    // Controllo alert coppie abbinate
+    (function(){
+        var alerts = {};
+        try { alerts = JSON.parse(localStorage.getItem('tcp_pair_alerts') || '{}'); } catch(e) {}
+        var pairs = ls.pairs();
+        var fields = [
+            {k:'delivery', label:'Delivery'},
+            {k:'address',  label:'Indirizzo'},
+            {k:'port',     label:'Porto'},
+            {k:'carrier',  label:'Carrier'},
+            {k:'cont',     label:'Container'}
+        ];
+        pairs.forEach(function(p, idx) {
+            var key = String(idx);
+            var changes = [];
+            ['imp','exp'].forEach(function(side) {
+                var ref = p[side];
+                var live = merged.find(function(o){ return o.id === ref.id; });
+                if (!live) return;
+                fields.forEach(function(f) {
+                    if (live[f.k] !== undefined && ref[f.k] !== undefined && live[f.k] !== ref[f.k]) {
+                        changes.push(side.toUpperCase() + ' ' + f.label + ': ' + ref[f.k] + ' -> ' + live[f.k]);
+                    }
+                });
+            });
+            if (changes.length > 0) {
+                var existing = alerts[key];
+                var newTooltip = changes.join('\n');
+                if (!existing || existing.tooltip !== newTooltip) {
+                    alerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
+                }
+            } else {
+                delete alerts[key];
+            }
+        });
+        localStorage.setItem('tcp_pair_alerts', JSON.stringify(alerts));
+    })();
+
     return { newCount: newIds.length, newIds, modIds };
 }
 
@@ -2394,8 +2433,13 @@ function buildPairsHtml(){
                 const pal=PAL[p.imp.carrier]||['#ddd'];
                 cc[p.imp.carrier]=(cc[p.imp.carrier]||0);
                 const bg=pal[cc[p.imp.carrier]++%pal.length];
-                return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;">
-                    <span class="tag imp">📥 IMP</span>
+                var _alerts={};
+                try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
+                var _al=_alerts[String(realIdx)];
+                var _alBadge=(_al&&!_al.dismissed)?('<span onclick="tcpDismissPairAlert('+realIdx+')" title="'+_al.tooltip.replace(/"/g,'&#34;').replace(/\n/g,' | ')+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;flex-shrink:0;">\u26a0\ufe0f Modificato</span>'):'';
+                var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
+                return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
+                    \${_alBadge}<span class="tag imp">📥 IMP</span>
                     <span class="tag">\${p.imp.carrier}</span><span class="tag">\${p.imp.cont}</span>
                     <span class="f">\${p.imp.contNr||'—'}</span>
                     <span class="f"><b>\${p.imp.address}</b></span>
@@ -3023,6 +3067,20 @@ function cleanExpired(){
         return true;
     });
     so(orders);
+    // Pulizia alerts scaduti (7gg dopo exp.delivery)
+    (function(){
+        var alerts={};
+        try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
+        var pairs=ls.pairs();
+        var h7d=7*24*60*60*1000;
+        Object.keys(alerts).forEach(function(key){
+            var p=pairs[parseInt(key)];
+            if(!p){delete alerts[key];return;}
+            var de=pd(p.exp.delivery);
+            if(de&&(Date.now()-de.getTime())>h7d)delete alerts[key];
+        });
+        localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
+    })();
 }
 
 // ── PLANNER render ──
@@ -3669,6 +3727,13 @@ function tcpToast(msg,duration){
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
+function tcpDismissPairAlert(idx){
+    var alerts={};
+    try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
+    if(alerts[idx]){alerts[idx].dismissed=true;}
+    localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
+    rPairs();
+}
 function tcpSaveFilters(){
     var f={
         c:[...document.querySelectorAll('.fs-c:checked')].map(x=>x.value),
@@ -4270,6 +4335,14 @@ function openOrUpdate(settings, lastUpdate, newCount, newIds, modIds) {
     win.document.close();
     // Forza layout flex su #t-viaggi dopo rebuild
     try{ win.showTab('viaggi'); }catch(e){}
+    // Toast se ci sono nuovi alert coppie
+    try{
+        var _alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');
+        var _nAlert=Object.values(_alerts).filter(function(a){return !a.dismissed;}).length;
+        if(_nAlert>0&&win&&!win.closed&&win.tcpToast){
+            win.tcpToast('\u26a0\ufe0f '+_nAlert+' riutilizz'+(parseInt(_nAlert)===1?'o':'i')+' con dati modificati',6000);
+        }
+    }catch(e){}
 }
 
 // ────────────────────────────────────────────────
