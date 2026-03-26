@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      2.0
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2067,8 +2067,12 @@ function updDim(){
         const compatCont=isI?compat(ref.cont,co):compat(co,ref.cont);
         const isMissing=r.style.opacity==='0.55'||r.style.opacity==='.55'||parseFloat(r.style.opacity||'1')<0.9;
         const ok=carr===ref.carrier&&compatCont&&compatDate&&!isMissing;
-        r.classList.toggle('dim',!ok);
-        r.style.display=ok?'':'none';
+        const activePorts=[...document.querySelectorAll('.fs-p:checked')].map(x=>x.value.toLowerCase());
+        const portTxt=(r.dataset.port||'').toLowerCase();
+        const okPort=!activePorts.length||activePorts.some(p=>portTxt.includes(p));
+        const finalOk=ok&&okPort;
+        r.classList.toggle('dim',!finalOk);
+        r.style.display=finalOk?'':'none';
     });
     // Riordina le righe visibili per data più vicina al riferimento
     const tbody=document.getElementById('tbody');if(tbody){
@@ -2715,7 +2719,7 @@ function rmPair(i){
         var removed=[];
         try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
         var rKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
-        if(!removed.includes(rKey))removed.push(rKey);
+        if(!removed.some(function(r){return(r.key||r)===rKey;}))removed.push({key:rKey,at:new Date().toISOString()});
         localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
     }
     pairs.splice(i,1);sp(pairs);rPairs();rPlanner();
@@ -2765,7 +2769,7 @@ function tcpDoMerge(incoming){
     try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
     incoming.forEach(function(inc){
         var rKey=(t(inc.imp&&inc.imp.contNr)||t(inc.imp&&inc.imp.id))+'|'+(t(inc.exp&&inc.exp.contNr)||t(inc.exp&&inc.exp.id));
-        if(removed.includes(rKey)){ignored++;return;}
+        if(removed.some(function(r){return(r.key||r)===rKey;})){ignored++;return;}
         var iNr=t(inc.imp&&inc.imp.contNr);
         var eNr=t(inc.exp&&inc.exp.contNr);
         var found=null;var foundType=null;
@@ -3119,15 +3123,26 @@ function cleanExpired(){
         return true;
     });
     so(orders);
-    // Pulizia resolved conflicts (30gg)
+    // Pulizia resolved conflicts (10gg)
     (function(){
         var resolved=[];
         try{resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
-        var h30d=30*24*60*60*1000;
+        var h10d=10*24*60*60*1000;
         resolved=resolved.filter(function(r){
-            return !r.at||(Date.now()-new Date(r.at).getTime())<h30d;
+            return !r.at||(Date.now()-new Date(r.at).getTime())<h10d;
         });
         localStorage.setItem('tcp_resolved_conflicts',JSON.stringify(resolved));
+    })();
+    // Pulizia removed_pairs (14gg)
+    (function(){
+        var removed=[];
+        try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
+        var h14d=14*24*60*60*1000;
+        removed=removed.filter(function(r){
+            if(typeof r==='string')return true; // retrocompatibilità
+            return !r.at||(Date.now()-new Date(r.at).getTime())<h14d;
+        });
+        localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
     })();
     // Pulizia alerts scaduti (7gg dopo exp.delivery)
     (function(){
@@ -3332,11 +3347,12 @@ function applyShowOnly(){
     const traffics=[...document.querySelectorAll('.fs-t:checked')].map(x=>x.value.toLowerCase());
     const ports=[...document.querySelectorAll('.fs-p:checked')].map(x=>x.value.toLowerCase());
     const onlyHl=document.getElementById('fs-hl')?.checked||false;
+    const rtChecked=document.getElementById('toggle-rt')?.checked!==false;
     const orders=lo();
     const rows=[...document.querySelectorAll('#tbody tr[data-id]')];
     rows.forEach(r=>{
         const noFilter=!carriers.length&&!conts.length&&!traffics.length&&!ports.length&&!onlyHl;
-        if(noFilter){r.style.display='';return;}
+        if(noFilter){r.style.display=rtChecked||r.dataset.rt!=='1'?'':'none';return;}
         const c=r.dataset.carrier||'';
         const co=r.dataset.cont||'';
         const t=(r.dataset.traffic||'').toLowerCase();
@@ -3346,7 +3362,8 @@ function applyShowOnly(){
         const okT=!traffics.length||traffics.includes(t);
         const okP=!ports.length||ports.some(p=>portTxt.includes(p));
         const okHl=!onlyHl||orders.find(function(o){return o.id===r.dataset.id&&o.highlighted;});
-        r.style.display=(okC&&okCo&&okT&&okP&&okHl)?'':'none';
+        const okRT=rtChecked||r.dataset.rt!=='1';
+        r.style.display=(okC&&okCo&&okT&&okP&&okHl&&okRT)?'':'none';
     });
     if(typeof updCounter==='function')updCounter();
 }
@@ -3831,9 +3848,9 @@ function tcpRestoreSavedFilters(){
         document.querySelectorAll('.fs-t').forEach(function(x){x.checked=(f.t||[]).includes(x.value);});
         document.querySelectorAll('.fs-p').forEach(function(x){x.checked=(f.p||[]).includes(x.value);});
         var hl=document.getElementById('fs-hl');if(hl)hl.checked=f.hl||false;
+        applyShowOnly();
         var rt=document.getElementById('toggle-rt');
         if(rt){rt.checked=f.rt!==false;tcpToggleRT();}
-        applyShowOnly();
     }catch(e){}
 }
 document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlanner();tcpRenderAlias();SC='created';SA=true;sortBy('created');tcpRestoreSavedFilters();setTimeout(updCounter,300);setTimeout(updCounter,800);setTimeout(function(){
@@ -4401,6 +4418,7 @@ function openOrUpdate(settings, lastUpdate, newCount, newIds, modIds) {
     win.document.close();
     // Forza layout flex su #t-viaggi dopo rebuild
     try{ win.showTab('viaggi'); }catch(e){}
+    setTimeout(function(){ try{ win.tcpRestoreSavedFilters(); }catch(e){} }, 300);
     // Toast se ci sono nuovi alert coppie
     try{
         var _alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');
