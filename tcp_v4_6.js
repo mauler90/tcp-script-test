@@ -1331,7 +1331,7 @@ function collect(intervalMin, carriers, containers) {
             if (traffic.toLowerCase() === 'export' && /livorno/i.test(portLoadE) && addressParts.length === 1 && /livorno/i.test(addressAll) && (/savino.*livorno/i.test(addressAll) || /savino.*livorno/i.test(branch) || /savino.*livorno/i.test(place))) return;
             const contNr   = cr.querySelector('td:nth-child(3)')?.innerText.trim() || '';
             const id       = contNr || (traffic + created + rawCarrier);
-            const _exO = existing.find(x => x.id === id && (x.traffic||'').toLowerCase() === traffic.toLowerCase());
+            const _exO = existing.find(x => x.id === id && x.traffic.toLowerCase() === traffic.toLowerCase());
             if (_exO) {
                 const _dlvN     = cr.querySelector('td:nth-child(6)')?.innerText.trim() || '';
                 const _plN      = cr.querySelector('td:nth-child(7)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
@@ -1437,10 +1437,8 @@ function collect(intervalMin, carriers, containers) {
             {k:'carrier',  label:'Carrier'},
             {k:'cont',     label:'Container'}
         ];
-        var newAlerts = {};
-        pairs.forEach(function(p) {
-            // Chiave stabile basata su contenuto, non su indice
-            var key = (p.imp.contNr||p.imp.id) + '|' + (p.exp.contNr||p.exp.id);
+        pairs.forEach(function(p, idx) {
+            var key = ((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
             var changes = [];
             ['imp','exp'].forEach(function(side) {
                 var ref = p[side];
@@ -1456,16 +1454,14 @@ function collect(intervalMin, carriers, containers) {
                 var existing = alerts[key];
                 var newTooltip = changes.join(' | ');
                 if (existing && existing.dismissed && existing.dismissedTooltip === newTooltip) {
-                    newAlerts[key] = existing; // mantieni dismiss
-                } else if (existing && existing.tooltip === newTooltip) {
-                    newAlerts[key] = existing; // nessuna variazione
-                } else {
-                    newAlerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
+                } else if (!existing || existing.tooltip !== newTooltip) {
+                    alerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
                 }
+            } else {
+                delete alerts[key];
             }
-            // se changes vuoto non aggiungiamo nulla → alert rimosso automaticamente
         });
-        localStorage.setItem('tcp_pair_alerts', JSON.stringify(newAlerts));
+        localStorage.setItem('tcp_pair_alerts', JSON.stringify(alerts));
     })();
 
     return { newCount: newIds.length, newIds, modIds };
@@ -2519,11 +2515,10 @@ function buildPairsHtml(){
                 const bg=pal[cc[p.imp.carrier]++%pal.length];
                 var _alerts={};
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-                var _alKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
-                var _al=_alerts[_alKey];
+                var _stableKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
+                var _al=_alerts[_stableKey];
                 var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _alKeyEsc=_alKey.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-                var _alSpan='<span onclick="tcpDismissPairAlert(\''+_alKeyEsc+'\',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
+                var _alSpan='<span data-k="'+_stableKey+'" onclick="tcpDismissPairAlert(this,event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
                 var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
@@ -2907,11 +2902,16 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
         if(existing){existing.choice=res.choice;}
         else{resolved.push({key:rKey,choice:res.choice,at:new Date().toISOString()});}
         if(res.choice==='theirs'){
-            // Cerca per contenuto (contNr o id) non per riferimento JS
-            var exImpKey=res.ex.imp.contNr||res.ex.imp.id;
-            var exExpKey=res.ex.exp.contNr||res.ex.exp.id;
+            var _eINr=(res.ex.imp&&res.ex.imp.contNr)||'';
+            var _eENr=(res.ex.exp&&res.ex.exp.contNr)||'';
+            var _eIId=(res.ex.imp&&res.ex.imp.id)||'';
+            var _eEId=(res.ex.exp&&res.ex.exp.id)||'';
             var idx=pairs.findIndex(function(p){
-                return (p.imp.contNr||p.imp.id)===exImpKey && (p.exp.contNr||p.exp.id)===exExpKey;
+                var pI=(p.imp&&p.imp.contNr)||'';var pE=(p.exp&&p.exp.contNr)||'';
+                if(_eINr&&_eENr&&pI&&pE)return _eINr===pI&&_eENr===pE;
+                if(_eINr&&pI)return _eINr===pI;
+                if(_eENr&&pE)return _eENr===pE;
+                return (_eIId&&_eIId===((p.imp&&p.imp.id)||''))||(_eEId&&_eEId===((p.exp&&p.exp.id)||''));
             });
             if(idx>=0)pairs[idx]=res.inc;
         }
@@ -3230,31 +3230,19 @@ function cleanExpired(){
         });
         localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
     })();
-    // Pulizia alerts scaduti (7gg dopo exp.delivery) — chiave stabile
+    // Pulizia alerts scaduti (7gg dopo exp.delivery)
     (function(){
         var alerts={};
         try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
         var pairs=ls.pairs();
         var h7d=7*24*60*60*1000;
-        var newAlerts={};
         Object.keys(alerts).forEach(function(key){
-            // Trova coppia per chiave stabile (contNr|contNr) o vecchio indice numerico
-            var p=null;
-            if(/^\d+$/.test(key)){
-                p=pairs[parseInt(key)]; // retrocompatibilità vecchie chiavi numeriche
-            } else {
-                p=pairs.find(function(pp){
-                    return ((pp.imp.contNr||pp.imp.id)+'|'+(pp.exp.contNr||pp.exp.id))===key;
-                });
-            }
-            if(!p)return; // coppia non più esistente → scartata
+            var p=pairs[parseInt(key)];
+            if(!p){delete alerts[key];return;}
             var de=pd(p.exp.delivery);
-            if(de&&(Date.now()-de.getTime())>h7d)return; // scaduta
-            // Migra vecchie chiavi numeriche alla nuova chiave stabile
-            var stableKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
-            newAlerts[stableKey]=alerts[key];
+            if(de&&(Date.now()-de.getTime())>h7d)delete alerts[key];
         });
-        localStorage.setItem('tcp_pair_alerts',JSON.stringify(newAlerts));
+        localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
     })();
 }
 
@@ -3904,8 +3892,9 @@ function tcpToast(msg,duration){
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
-function tcpDismissPairAlert(key,ev){
+function tcpDismissPairAlert(elOrIdx,ev){
     if(ev){ev.stopPropagation();ev.preventDefault();}
+    var key=typeof elOrIdx==='string'?elOrIdx:(elOrIdx&&elOrIdx.dataset?elOrIdx.dataset.k:String(elOrIdx));
     var alerts={};
     try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
     if(alerts[key]){
