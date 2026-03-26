@@ -2791,7 +2791,20 @@ function tcpDoMerge(incoming){
         }
         if(!found){toAdd.push(inc);}
         else if(foundType==='exact'){ignored++;}
-        else{conflicts.push({inc:inc,ex:found,type:foundType});}
+        else{
+            var _resolved=[];
+            try{_resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
+            var _rKey=(found.imp.contNr||found.imp.id)+'|'+(found.exp.contNr||found.exp.id)
+                     +'||'+(inc.imp.contNr||inc.imp.id)+'|'+(inc.exp.contNr||inc.exp.id);
+            var _prevRes=_resolved.find(function(r){return r.key===_rKey;});
+            if(_prevRes&&_prevRes.choice==='theirs'){
+                conflicts.push({inc:inc,ex:found,type:foundType,autoChoice:'theirs'});
+            }else if(_prevRes){
+                ignored++;
+            }else{
+                conflicts.push({inc:inc,ex:found,type:foundType});
+            }
+        }
     });
     return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
 }
@@ -2799,12 +2812,21 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
     _pushUndo();
     var pairs=lp();
     toAdd.forEach(function(p){pairs.push(p);});
+    var resolved=[];
+    try{resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
     conflictResolutions.forEach(function(res){
+        if(res.choice==='skip')return;
+        var rKey=(res.ex.imp.contNr||res.ex.imp.id)+'|'+(res.ex.exp.contNr||res.ex.exp.id)
+                +'||'+(res.inc.imp.contNr||res.inc.imp.id)+'|'+(res.inc.exp.contNr||res.inc.exp.id);
+        var existing=resolved.find(function(r){return r.key===rKey;});
+        if(existing){existing.choice=res.choice;}
+        else{resolved.push({key:rKey,choice:res.choice,at:new Date().toISOString()});}
         if(res.choice==='theirs'){
             var idx=pairs.findIndex(function(p){return p===res.ex;});
             if(idx>=0)pairs[idx]=res.inc;
         }
     });
+    localStorage.setItem('tcp_resolved_conflicts',JSON.stringify(resolved));
     sp(pairs);rPairs();rPlanner();
 }
 // -- IMPORT RIUTILIZZI DA FILE --
@@ -3044,6 +3066,7 @@ function tcpApplyMergePairsModal(){
     var rD=_mergePayload.tariffario||{toAdd:[],conflicts:[]};
     // Pairs
     var pRes=(pD.conflicts||[]).map(function(cf,ci){
+        if(cf.autoChoice)return{ex:cf.ex,inc:cf.inc,choice:cf.autoChoice};
         var sel=document.querySelector('input[name="mpc'+ci+'"]:checked');
         return{ex:cf.ex,inc:cf.inc,choice:sel?sel.value:'mine'};
     });
@@ -3096,6 +3119,16 @@ function cleanExpired(){
         return true;
     });
     so(orders);
+    // Pulizia resolved conflicts (30gg)
+    (function(){
+        var resolved=[];
+        try{resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
+        var h30d=30*24*60*60*1000;
+        resolved=resolved.filter(function(r){
+            return !r.at||(Date.now()-new Date(r.at).getTime())<h30d;
+        });
+        localStorage.setItem('tcp_resolved_conflicts',JSON.stringify(resolved));
+    })();
     // Pulizia alerts scaduti (7gg dopo exp.delivery)
     (function(){
         var alerts={};
