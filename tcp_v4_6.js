@@ -1331,7 +1331,7 @@ function collect(intervalMin, carriers, containers) {
             if (traffic.toLowerCase() === 'export' && /livorno/i.test(portLoadE) && addressParts.length === 1 && /livorno/i.test(addressAll) && (/savino.*livorno/i.test(addressAll) || /savino.*livorno/i.test(branch) || /savino.*livorno/i.test(place))) return;
             const contNr   = cr.querySelector('td:nth-child(3)')?.innerText.trim() || '';
             const id       = contNr || (traffic + created + rawCarrier);
-            const _exO = existing.find(x => x.id === id && x.traffic.toLowerCase() === traffic.toLowerCase());
+            const _exO = existing.find(x => x.id === id && (x.traffic||'').toLowerCase() === traffic.toLowerCase());
             if (_exO) {
                 const _dlvN     = cr.querySelector('td:nth-child(6)')?.innerText.trim() || '';
                 const _plN      = cr.querySelector('td:nth-child(7)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
@@ -1437,8 +1437,10 @@ function collect(intervalMin, carriers, containers) {
             {k:'carrier',  label:'Carrier'},
             {k:'cont',     label:'Container'}
         ];
-        pairs.forEach(function(p, idx) {
-            var key = ((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_') + '|' + ((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_');
+        var newAlerts = {};
+        pairs.forEach(function(p) {
+            // Chiave stabile basata su contenuto, non su indice
+            var key = (p.imp.contNr||p.imp.id) + '|' + (p.exp.contNr||p.exp.id);
             var changes = [];
             ['imp','exp'].forEach(function(side) {
                 var ref = p[side];
@@ -1454,14 +1456,16 @@ function collect(intervalMin, carriers, containers) {
                 var existing = alerts[key];
                 var newTooltip = changes.join(' | ');
                 if (existing && existing.dismissed && existing.dismissedTooltip === newTooltip) {
-                } else if (!existing || existing.tooltip !== newTooltip) {
-                    alerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
+                    newAlerts[key] = existing; // mantieni dismiss
+                } else if (existing && existing.tooltip === newTooltip) {
+                    newAlerts[key] = existing; // nessuna variazione
+                } else {
+                    newAlerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
                 }
-            } else {
-                delete alerts[key];
             }
+            // se changes vuoto non aggiungiamo nulla → alert rimosso automaticamente
         });
-        localStorage.setItem('tcp_pair_alerts', JSON.stringify(alerts));
+        localStorage.setItem('tcp_pair_alerts', JSON.stringify(newAlerts));
     })();
 
     return { newCount: newIds.length, newIds, modIds };
@@ -2515,11 +2519,11 @@ function buildPairsHtml(){
                 const bg=pal[cc[p.imp.carrier]++%pal.length];
                 var _alerts={};
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-                var _alertKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+ ((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'')+'|';_alertKey=_alertKey.replace(/[^a-z0-9_|]/gi,'_');
-                var _al=_alerts[((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_') + '|' + ((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_')];
+                var _alKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
+                var _al=_alerts[_alKey];
                 var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _pairAlertKey=((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_')+'|'+((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_');
-                var _alSpan='<span onclick="tcpDismissPairAlert(\''+_pairAlertKey+'\',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
+                var _alKeyEsc=_alKey.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+                var _alSpan='<span onclick="tcpDismissPairAlert(\''+_alKeyEsc+'\',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
                 var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
@@ -2903,19 +2907,11 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
         if(existing){existing.choice=res.choice;}
         else{resolved.push({key:rKey,choice:res.choice,at:new Date().toISOString()});}
         if(res.choice==='theirs'){
-            var _exINr=(res.ex.imp&&res.ex.imp.contNr)||'';
-            var _exENr=(res.ex.exp&&res.ex.exp.contNr)||'';
-            var _exIId=(res.ex.imp&&res.ex.imp.id)||'';
-            var _exEId=(res.ex.exp&&res.ex.exp.id)||'';
+            // Cerca per contenuto (contNr o id) non per riferimento JS
+            var exImpKey=res.ex.imp.contNr||res.ex.imp.id;
+            var exExpKey=res.ex.exp.contNr||res.ex.exp.id;
             var idx=pairs.findIndex(function(p){
-                var pINr=(p.imp&&p.imp.contNr)||'';
-                var pENr=(p.exp&&p.exp.contNr)||'';
-                var pIId=(p.imp&&p.imp.id)||'';
-                var pEId=(p.exp&&p.exp.id)||'';
-                if(_exINr&&_exENr&&pINr&&pENr)return _exINr===pINr&&_exENr===pENr;
-                if(_exINr&&pINr)return _exINr===pINr;
-                if(_exENr&&pENr)return _exENr===pENr;
-                return _exIId===pIId&&_exEId===pEId;
+                return (p.imp.contNr||p.imp.id)===exImpKey && (p.exp.contNr||p.exp.id)===exExpKey;
             });
             if(idx>=0)pairs[idx]=res.inc;
         }
@@ -3234,19 +3230,31 @@ function cleanExpired(){
         });
         localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
     })();
-    // Pulizia alerts scaduti (7gg dopo exp.delivery)
+    // Pulizia alerts scaduti (7gg dopo exp.delivery) — chiave stabile
     (function(){
         var alerts={};
         try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
         var pairs=ls.pairs();
         var h7d=7*24*60*60*1000;
+        var newAlerts={};
         Object.keys(alerts).forEach(function(key){
-            var p=pairs[parseInt(key)];
-            if(!p){delete alerts[key];return;}
+            // Trova coppia per chiave stabile (contNr|contNr) o vecchio indice numerico
+            var p=null;
+            if(/^\d+$/.test(key)){
+                p=pairs[parseInt(key)]; // retrocompatibilità vecchie chiavi numeriche
+            } else {
+                p=pairs.find(function(pp){
+                    return ((pp.imp.contNr||pp.imp.id)+'|'+(pp.exp.contNr||pp.exp.id))===key;
+                });
+            }
+            if(!p)return; // coppia non più esistente → scartata
             var de=pd(p.exp.delivery);
-            if(de&&(Date.now()-de.getTime())>h7d)delete alerts[key];
+            if(de&&(Date.now()-de.getTime())>h7d)return; // scaduta
+            // Migra vecchie chiavi numeriche alla nuova chiave stabile
+            var stableKey=(p.imp.contNr||p.imp.id)+'|'+(p.exp.contNr||p.exp.id);
+            newAlerts[stableKey]=alerts[key];
         });
-        localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
+        localStorage.setItem('tcp_pair_alerts',JSON.stringify(newAlerts));
     })();
 }
 
@@ -3896,13 +3904,13 @@ function tcpToast(msg,duration){
     clearTimeout(t._timer);
     t._timer=setTimeout(function(){t.style.opacity='0';},duration||4000);
 }
-function tcpDismissPairAlert(idx,ev){
+function tcpDismissPairAlert(key,ev){
     if(ev){ev.stopPropagation();ev.preventDefault();}
     var alerts={};
     try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-    if(alerts[idx]){
-        alerts[idx].dismissed=true;
-        alerts[idx].dismissedTooltip=alerts[idx].tooltip;
+    if(alerts[key]){
+        alerts[key].dismissed=true;
+        alerts[key].dismissedTooltip=alerts[key].tooltip;
     }
     localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
     rPairs();
