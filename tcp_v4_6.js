@@ -2974,14 +2974,29 @@ function tcpShowSyncModal(payload){
         if((pD.conflicts||[]).length){
             html+='<div style="font-weight:bold;color:#002856;font-size:12px;margin:8px 0 4px;">Riutilizzi</div>';
             html+=(pD.conflicts||[]).map(function(cf,ci){
-                var _f=cf.type==='conflict-exp'?'Nr.EXP diverso':'Nr.IMP diverso';
-                return '<div style="border:1px solid #d0dff0;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
-                    +'<div style="font-weight:bold;color:#002856;margin-bottom:4px;">'+_f+'</div>'
-                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
-                    +'<div style="background:#f0f4fa;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">MIO</div>'
-                    +'<div>'+cf.ex.imp.carrier+' '+cf.ex.imp.cont+'</div><div>'+cf.ex.imp.address+'</div></div>'
-                    +'<div style="background:#f0f8f0;border-radius:4px;padding:5px 8px;"><div style="font-size:10px;color:#888;font-weight:bold;">COLLEGA</div>'
-                    +'<div>'+cf.inc.imp.carrier+' '+cf.inc.imp.cont+'</div><div>'+cf.inc.imp.address+'</div></div></div>'
+                var _diffField=cf.type==='conflict-exp'?'contNr_exp':'contNr_imp';
+                var _label=cf.type==='conflict-exp'?'Nr. Container EXP diverso':'Nr. Container IMP diverso';
+                function _hl(val,isDiff){return isDiff?('<b style="background:#fff3cd;border-radius:3px;padding:1px 4px;">'+val+'</b>'):val;}
+                var _isExpConfl=cf.type==='conflict-exp';
+                function _pairHtml(p){
+                    return '<div style="font-size:11px;line-height:1.8;">'
+                        +'<div><b>IMP:</b> '+p.imp.carrier+' '+p.imp.cont
+                            +' &nbsp;<span style="color:#555;">Nr:</span> '+_hl(p.imp.contNr||'\u2014',!_isExpConfl)
+                            +' &nbsp;<span style="color:#555;">del</span> '+p.imp.delivery+'</div>'
+                        +'<div style="color:#555;font-size:11px;padding-left:8px;">'+p.imp.address+' &nbsp;|&nbsp; '+p.imp.port+'</div>'
+                        +'<div style="color:#aaa;font-size:10px;text-align:center;padding:2px 0;">\u2195</div>'
+                        +'<div><b>EXP:</b> '+p.exp.carrier+' '+p.exp.cont
+                            +' &nbsp;<span style="color:#555;">Nr:</span> '+_hl(p.exp.contNr||'\u2014',_isExpConfl)
+                            +' &nbsp;<span style="color:#555;">del</span> '+p.exp.delivery+'</div>'
+                        +'<div style="color:#555;font-size:11px;padding-left:8px;">'+p.exp.address+' &nbsp;|&nbsp; '+p.exp.port+'</div>'
+                        +'</div>';
+                }
+                return '<div style="border:1px solid #f0c040;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;">'
+                    +'<div style="font-weight:bold;color:#e67e22;margin-bottom:8px;font-size:12px;">\u26a0\ufe0f '+_label+'</div>'
+                    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">'
+                    +'<div style="background:#f0f4fa;border-radius:4px;padding:8px;"><div style="font-size:10px;color:#1a65b8;font-weight:bold;margin-bottom:4px;">MIO</div>'+_pairHtml(cf.ex)+'</div>'
+                    +'<div style="background:#f0f8f0;border-radius:4px;padding:8px;"><div style="font-size:10px;color:#27ae60;font-weight:bold;margin-bottom:4px;">COLLEGA</div>'+_pairHtml(cf.inc)+'</div>'
+                    +'</div>'
                     +'<div style="display:flex;gap:6px;">'
                     +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #1a65b8;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="mine" checked> <span style="color:#1a65b8;font-weight:bold;">Il mio</span></label>'
                     +'<label style="display:flex;align-items:center;gap:3px;cursor:pointer;padding:3px 8px;border-radius:4px;border:2px solid #27ae60;font-size:11px;"><input type="radio" name="mpc'+ci+'" value="theirs"> <span style="color:#27ae60;font-weight:bold;">Collega</span></label>'
