@@ -1331,7 +1331,7 @@ function collect(intervalMin, carriers, containers) {
             if (traffic.toLowerCase() === 'export' && /livorno/i.test(portLoadE) && addressParts.length === 1 && /livorno/i.test(addressAll) && (/savino.*livorno/i.test(addressAll) || /savino.*livorno/i.test(branch) || /savino.*livorno/i.test(place))) return;
             const contNr   = cr.querySelector('td:nth-child(3)')?.innerText.trim() || '';
             const id       = contNr || (traffic + created + rawCarrier);
-            const _exO = existing.find(x => x.id === id);
+            const _exO = existing.find(x => x.id === id && x.traffic.toLowerCase() === traffic.toLowerCase());
             if (_exO) {
                 const _dlvN     = cr.querySelector('td:nth-child(6)')?.innerText.trim() || '';
                 const _plN      = cr.querySelector('td:nth-child(7)')?.innerText.replace(/\[[^\]]+\]\s*/g,'').trim() || '';
@@ -1438,16 +1438,13 @@ function collect(intervalMin, carriers, containers) {
             {k:'cont',     label:'Container'}
         ];
         pairs.forEach(function(p, idx) {
-            var key = String(idx);
+            var key = ((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_') + '|' + ((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_');
             var changes = [];
             ['imp','exp'].forEach(function(side) {
                 var ref = p[side];
                 var live = merged.find(function(o){ return o.id === ref.id; });
                 if (!live) return;
                 fields.forEach(function(f) {
-                    // contNr non monitorato sull'export: il nr del container IMP
-                    // viene spesso assegnato anche all'EXP nel riutilizzo, creando falsi alert
-                    if (f.k === 'cont' && side === 'exp') return;
                     if (live[f.k] !== undefined && ref[f.k] !== undefined && live[f.k] !== ref[f.k]) {
                         changes.push(side.toUpperCase() + ' ' + f.label + ': ' + ref[f.k] + ' -> ' + live[f.k]);
                     }
@@ -2518,9 +2515,11 @@ function buildPairsHtml(){
                 const bg=pal[cc[p.imp.carrier]++%pal.length];
                 var _alerts={};
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-                var _al=_alerts[String(realIdx)];
+                var _alertKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+ ((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'')+'|';_alertKey=_alertKey.replace(/[^a-z0-9_|]/gi,'_');
+                var _al=_alerts[((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_') + '|' + ((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_')];
                 var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _alSpan='<span onclick="tcpDismissPairAlert('+realIdx+',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
+                var _pairAlertKey=((p.imp&&p.imp.contNr)||((p.imp&&p.imp.id)||'')).replace(/[^a-z0-9_]/gi,'_')+'|'+((p.exp&&p.exp.contNr)||((p.exp&&p.exp.id)||'')).replace(/[^a-z0-9_]/gi,'_');
+                var _alSpan='<span onclick="tcpDismissPairAlert(\''+_pairAlertKey+'\',event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
                 var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
@@ -2904,7 +2903,20 @@ function tcpApplyMergePairs(toAdd,conflictResolutions){
         if(existing){existing.choice=res.choice;}
         else{resolved.push({key:rKey,choice:res.choice,at:new Date().toISOString()});}
         if(res.choice==='theirs'){
-            var idx=pairs.findIndex(function(p){return p===res.ex;});
+            var _exINr=(res.ex.imp&&res.ex.imp.contNr)||'';
+            var _exENr=(res.ex.exp&&res.ex.exp.contNr)||'';
+            var _exIId=(res.ex.imp&&res.ex.imp.id)||'';
+            var _exEId=(res.ex.exp&&res.ex.exp.id)||'';
+            var idx=pairs.findIndex(function(p){
+                var pINr=(p.imp&&p.imp.contNr)||'';
+                var pENr=(p.exp&&p.exp.contNr)||'';
+                var pIId=(p.imp&&p.imp.id)||'';
+                var pEId=(p.exp&&p.exp.id)||'';
+                if(_exINr&&_exENr&&pINr&&pENr)return _exINr===pINr&&_exENr===pENr;
+                if(_exINr&&pINr)return _exINr===pINr;
+                if(_exENr&&pENr)return _exENr===pENr;
+                return _exIId===pIId&&_exEId===pEId;
+            });
             if(idx>=0)pairs[idx]=res.inc;
         }
     });
