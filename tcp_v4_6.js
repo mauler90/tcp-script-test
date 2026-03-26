@@ -1445,6 +1445,9 @@ function collect(intervalMin, carriers, containers) {
                 var live = merged.find(function(o){ return o.id === ref.id; });
                 if (!live) return;
                 fields.forEach(function(f) {
+                    // contNr non monitorato sull'export: il nr del container IMP
+                    // viene spesso assegnato anche all'EXP nel riutilizzo, creando falsi alert
+                    if (f.k === 'cont' && side === 'exp') return;
                     if (live[f.k] !== undefined && ref[f.k] !== undefined && live[f.k] !== ref[f.k]) {
                         changes.push(side.toUpperCase() + ' ' + f.label + ': ' + ref[f.k] + ' -> ' + live[f.k]);
                     }
