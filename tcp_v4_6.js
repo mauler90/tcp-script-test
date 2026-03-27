@@ -1698,6 +1698,7 @@ function buildReportHtml(pairs, orders) {
 }
 function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
     const pid  = pairedIds();
+    function _ha(s){return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/`/g,"&#96;").replace(/\$\{/g,"&#36;{");}
     const nset = new Set(newIds);
     const mset = new Set(modIds || []);
     const pairs = ls.pairs();
@@ -1728,13 +1729,13 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
             const missingBadge = o.missing ? ' <span style="background:#888;color:white;border-radius:3px;padding:1px 5px;font-size:8px;vertical-align:middle;white-space:nowrap;">non presente</span>' : '';
             const rtIcon   = o.reqTruck ? `<span style="color:#c0392b;font-weight:bold;font-size:13px;" title="${o.reqTruck}">✕</span>` : '';
             const hlBg     = o.highlighted ? '#f0a500' : '#002856';
-            const pallino  = (o.reqTruck || o.ldv) ? `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;margin:0 4px;vertical-align:middle;" title="${o.reqTruck?'RT: '+o.reqTruck+' ':''}${o.ldv?'LDV emessa ':''}${o.adr?'ADR: '+o.adr:''}"></span>` : '';
+            const pallino  = (o.reqTruck || o.ldv) ? `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;margin:0 4px;vertical-align:middle;" title="${o.reqTruck?'RT: '+_ha(o.reqTruck)+' ':''}${o.ldv?'LDV emessa ':''}${o.adr?'ADR: '+o.adr:''}"></span>` : '';
             const ldvCell  = o.ldv ? '<span style="color:#c0392b;font-weight:bold;font-size:10px;">LDV Emessa</span>' : '';
             const adrIcon  = o.adr ? '<span title="Merce pericolosa" style="cursor:default;">⚠️</span>' : '';
-            const placeIcon = o.place ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#999;color:white;font-size:8px;font-weight:bold;cursor:help;margin-left:4px;flex-shrink:0;" title="' + o.place.replace(/"/g,"'") + '">?</span>' : '';
+            const placeIcon = o.place ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#999;color:white;font-size:8px;font-weight:bold;cursor:help;margin-left:4px;flex-shrink:0;" title="' + o.place.replace(/"/g,"'").replace(/`/g,"&#96;").replace(/\${/g,"&#36;{") + '">?</span>' : '';
             return `<tr id="row-${sid}" style="${rowBg}${isNew?'outline:2px solid #e74c3c;':isMod?'outline:2px solid #f0a500;':''}"
                 data-id="${o.id}" data-traffic="${o.traffic}" data-carrier="${o.carrier}"
-                data-cont="${o.cont}" data-delivery="${o.delivery}" data-paired="${isPaired}" data-rt="${o.reqTruck?'1':'0'}" data-port="${(o.port||'').toLowerCase()}" data-address="${o.address}">
+                data-cont="${o.cont}" data-delivery="${o.delivery}" data-paired="${isPaired}" data-rt="${o.reqTruck?'1':'0'}" data-port="${(o.port||'').toLowerCase()}" data-address="${_ha(o.address)}">
                 <td style="text-align:center;padding:4px;">
                     <input type="checkbox" id="chk-${sid}"
                         onchange="handleCheck('${o.id}','${o.traffic}')"
@@ -3234,10 +3235,10 @@ function cleanExpired(){
     (function(){
         var alerts={};
         try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-        var pairs=ls.pairs();
+        var pairs=lp();
         var h7d=7*24*60*60*1000;
         Object.keys(alerts).forEach(function(key){
-            var p=pairs[parseInt(key)];
+            var p=pairs.find(function(x){return (((x.imp&&x.imp.contNr)||(x.imp&&x.imp.id)||'')+'|'+((x.exp&&x.exp.contNr)||(x.exp&&x.exp.id)||''))===key;});
             if(!p){delete alerts[key];return;}
             var de=pd(p.exp.delivery);
             if(de&&(Date.now()-de.getTime())>h7d)delete alerts[key];
