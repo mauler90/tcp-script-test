@@ -1907,6 +1907,15 @@ function showTab(t){
     const editFlt2=document.getElementById('btn-edit-float');if(editFlt2)editFlt2.style.display='none';
     if(t==='pairs')rPairs();
     if(t==='planner')rPlanner();
+    if(t==='syncreport'){
+        var _srEl=document.getElementById('sr-timestamps');
+        if(_srEl){
+            function _fmtTs(iso){if(!iso)return'\u2014';try{var d=new Date(iso);return d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});}catch(e){return iso;}}
+            var _myPub=localStorage.getItem('tcp_gist_my_last_pub');
+            var _colUpd=localStorage.getItem('tcp_gist_collega_last_update');
+            _srEl.innerHTML='Mio ultimo Gist: <b>'+_fmtTs(_myPub)+'<\/b> &nbsp;|&nbsp; Ultimo Gist collega: <b>'+_fmtTs(_colUpd)+'<\/b>';
+        }
+    }
     if(t==='tratte'){
         tcpRenderAlias();
         var _tr=[];try{_tr=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
@@ -2743,12 +2752,13 @@ function tcpCopiaExcel(i){
     }
     function _citta(addr){
         if(!addr)return'';
-        var part=addr.split('+')[0].trim();
-        // Tronca tutto da '(' in poi: 'SCANDICCI (FI) 50018' -> 'SCANDICCI'
-        var paren=part.indexOf('(');
-        if(paren>0)part=part.substring(0,paren).trim();
-        else part=part.replace(/\d{5}/g,'').trim();
-        return part.toUpperCase();
+        return addr.split('+').map(function(stop){
+            var s=stop.trim();
+            var paren=s.indexOf('(');
+            if(paren>0)s=s.substring(0,paren).trim();
+            else s=s.replace(/\d{5}/g,'').trim();
+            return s.toUpperCase();
+        }).filter(Boolean).join(' + ');
     }
     const compagnia=_carrier(p.imp.carrier);
     const tipo=_cont(p.imp.cont);
@@ -2961,6 +2971,7 @@ function tcpPublishGist(){
         .then(function(data){
             if(data.id){
                 localStorage.setItem('tcp_gist_id',data.id);
+                localStorage.setItem('tcp_gist_my_last_pub',new Date().toISOString());
                 if(btn){btn.textContent='\u2601\uFE0F Pubblica';btn.disabled=false;}
                 tcpToast('\u2601\uFE0F Pubblicato'+(gid?'':' - ID: '+data.id+' (salvato)'));
             }else{
@@ -3019,6 +3030,7 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
             if(data.files['tcp_pairs.json']){
                 var pp=JSON.parse(data.files['tcp_pairs.json'].content);
                 if(pp.pairs)pairsResult=tcpDoMerge(pp.pairs);
+                if(pp.exported)localStorage.setItem('tcp_gist_collega_last_update',pp.exported);
             }
             var tratteResult={toAdd:[],conflicts:[],ignored:0};
             if(data.files['tcp_tratte.json']){
@@ -3865,6 +3877,7 @@ function tcpCheckCollegaSilent(){
             if(data.files['tcp_pairs.json']){
                 var pp=JSON.parse(data.files['tcp_pairs.json'].content);
                 if(pp.pairs)newPairs=tcpDoMerge(pp.pairs).toAdd.length;
+                if(pp.exported)localStorage.setItem('tcp_gist_collega_last_update',pp.exported);
             }
             if(data.files['tcp_tratte.json']){
                 var tt=JSON.parse(data.files['tcp_tratte.json'].content);
@@ -4153,7 +4166,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
 </div>
 
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
-<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
+<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><div><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div id="sr-timestamps" style="font-size:10px;color:#888;margin-top:3px;"></div></div><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
 
 <script>
 (function(){
