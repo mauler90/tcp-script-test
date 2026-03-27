@@ -1698,7 +1698,7 @@ function buildReportHtml(pairs, orders) {
 }
 function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
     const pid  = pairedIds();
-    function _ha(s){return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/`/g,"&#96;").replace(/\$\{/g,"&#36;{");}
+    function _ha(s){return (s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/`/g,"&#96;").replace(/\${/g,"&#36;{");}
     const nset = new Set(newIds);
     const mset = new Set(modIds || []);
     const pairs = ls.pairs();
@@ -1727,9 +1727,9 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
             const newBadge = isNew ? '<span style="background:#e74c3c;color:white;border-radius:3px;padding:1px 5px;font-size:9px;margin-left:4px;vertical-align:middle;">NEW</span>' : '';
             const modBadge = isMod ? '<span style="background:#f0a500;color:white;border-radius:3px;padding:1px 5px;font-size:9px;margin-left:4px;vertical-align:middle;">MOD</span>' : '';
             const missingBadge = o.missing ? ' <span style="background:#888;color:white;border-radius:3px;padding:1px 5px;font-size:8px;vertical-align:middle;white-space:nowrap;">non presente</span>' : '';
-            const rtIcon   = o.reqTruck ? `<span style="color:#c0392b;font-weight:bold;font-size:13px;" title="${o.reqTruck}">✕</span>` : '';
+            const rtIcon   = o.reqTruck ? `<span style="color:#c0392b;font-weight:bold;font-size:13px;" title="${_ha(o.reqTruck)}">✕</span>` : '';
             const hlBg     = o.highlighted ? '#f0a500' : '#002856';
-            const pallino  = (o.reqTruck || o.ldv) ? `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;margin:0 4px;vertical-align:middle;" title="${o.reqTruck?'RT: '+_ha(o.reqTruck)+' ':''}${o.ldv?'LDV emessa ':''}${o.adr?'ADR: '+o.adr:''}"></span>` : '';
+            const pallino  = (o.reqTruck || o.ldv) ? `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;margin:0 4px;vertical-align:middle;" title="${o.reqTruck?'RT: '+_ha(o.reqTruck)+' ':''}${o.ldv?'LDV emessa ':''}${o.adr?'ADR: '+_ha(o.adr):''}"></span>` : '';
             const ldvCell  = o.ldv ? '<span style="color:#c0392b;font-weight:bold;font-size:10px;">LDV Emessa</span>' : '';
             const adrIcon  = o.adr ? '<span title="Merce pericolosa" style="cursor:default;">⚠️</span>' : '';
             const placeIcon = o.place ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border-radius:50%;background:#999;color:white;font-size:8px;font-weight:bold;cursor:help;margin-left:4px;flex-shrink:0;" title="' + o.place.replace(/"/g,"'").replace(/`/g,"&#96;").replace(/\${/g,"&#36;{") + '">?</span>' : '';
@@ -4497,12 +4497,12 @@ function openOrUpdate(settings, lastUpdate, newCount, newIds, modIds) {
         win = window.open('', 'tcp_monitor_win', 'width=1500,height=850,resizable=yes,scrollbars=yes');
     window.tcpMonitorWin = win;
     const html = buildHTML(ls.orders(), settings, lastUpdate, newCount, newIds, modIds);
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    // Forza layout flex su #t-viaggi dopo rebuild
-    try{ win.showTab('viaggi'); }catch(e){}
-    setTimeout(function(){ try{ win.tcpRestoreSavedFilters(); }catch(e){} }, 300);
+    var _blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    var _burl=URL.createObjectURL(_blob);
+    win.location.replace(_burl);
+    setTimeout(function(){URL.revokeObjectURL(_burl);},8000);
+    // Layout flex gestito da DOMContentLoaded nella finestra
+    // restoreFilters gestito da DOMContentLoaded
     // Toast se ci sono nuovi alert coppie
     try{
         var _alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');
