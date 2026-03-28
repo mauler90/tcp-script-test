@@ -3050,6 +3050,41 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
             alert('Errore: '+err.message);
         });
 }
+function tcpRipristinaGist(){
+    var tok=localStorage.getItem('tcp_gist_token')||'';
+    var gid=localStorage.getItem('tcp_gist_id')||'';
+    if(!tok){alert('Imposta prima il token GitHub nelle impostazioni.');tcpGistSettings();return;}
+    if(!gid){alert('Gist ID non trovato. Devi aver pubblicato almeno una volta da questa postazione.');tcpGistSettings();return;}
+    var btn=document.getElementById('btn-ripristina-gist');
+    if(btn){btn.textContent='Scaricamento...';btn.disabled=true;}
+    fetch('https://api.github.com/gists/'+gid,{headers:{'Authorization':'Bearer '+tok}})
+        .then(function(r){return r.json();})
+        .then(function(data){
+            if(btn){btn.textContent='\u2b07\ufe0f Ripristina da mio Gist';btn.disabled=false;}
+            if(!data.files){alert('Gist non trovato o vuoto.');return;}
+            var pairsResult={toAdd:[],conflicts:[],ignored:0};
+            if(data.files['tcp_pairs.json']){
+                var pp=JSON.parse(data.files['tcp_pairs.json'].content);
+                if(pp.pairs)pairsResult=tcpDoMerge(pp.pairs);
+            }
+            var tratteResult={toAdd:[],conflicts:[],ignored:0};
+            if(data.files['tcp_tratte.json']){
+                var tt=JSON.parse(data.files['tcp_tratte.json'].content);
+                if(tt.tratte)tratteResult=tcpDoMergeTratte(tt.tratte);
+            }
+            if(data.files['tcp_alias.json']){
+                var aa=JSON.parse(data.files['tcp_alias.json'].content);
+                if(aa.alias)tcpDoMergeAlias(aa.alias);
+            }
+            _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:{toAdd:[],conflicts:[],ignored:0},source:'ripristino',autoPublish:false};
+            tcpShowSyncModal(_mergePayload);
+        })
+        .catch(function(err){
+            if(btn){btn.textContent='\u2b07\ufe0f Ripristina da mio Gist';btn.disabled=false;}
+            alert('Errore: '+err.message);
+        });
+}
+
 function tcpSyncGist(){
     var tok=localStorage.getItem('tcp_gist_token')||'';
     var gidc=localStorage.getItem('tcp_gist_id_collega')||'';
@@ -4166,7 +4201,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
 </div>
 
 <div id="t-report" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;">${reportHtml}</div>
-<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><div><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div id="sr-timestamps" style="font-size:10px;color:#888;margin-top:3px;"></div></div><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div></div>
+<div id="t-syncreport" class="tc" style="flex:1;overflow-y:auto;padding:12px 16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;border-bottom:2px solid #bdf3fc;padding-bottom:8px;"><div><b style="color:#002856;font-size:13px;">&#128260; Sync Report</b><div id="sr-timestamps" style="font-size:10px;color:#888;margin-top:3px;"></div></div><div style="display:flex;gap:8px;align-items:center;"><button onclick="tcpApplyMergePairsModal()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#10003; Applica</button><button onclick="tcpCloseMergePairsModal()" style="background:#aaa;color:white;border:none;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;">Annulla</button></div></div><p id="sr-summary" style="font-size:11px;color:#555;margin-bottom:12px;"></p><div id="sr-conflicts"><p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun sync in corso.</p></div><div style="margin-top:24px;padding-top:16px;border-top:2px dashed #d0dff0;"><div style="font-weight:bold;color:#002856;font-size:12px;margin-bottom:6px;">&#128194; Cambio postazione</div><p style="font-size:11px;color:#555;margin-bottom:10px;">Ripristina riutilizzi, tratte e alias dal tuo Gist su questa postazione.</p><button id="btn-ripristina-gist" data-label="&#11015;&#65039; Ripristina da mio Gist" onclick="tcpRipristinaGist()" style="background:#5b7fa6;color:white;border:none;border-radius:4px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:bold;">&#11015;&#65039; Ripristina da mio Gist</button></div></div>
 
 <script>
 (function(){
