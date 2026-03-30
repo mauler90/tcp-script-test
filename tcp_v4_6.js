@@ -1442,7 +1442,7 @@ function collect(intervalMin, carriers, containers) {
             var changes = [];
             ['imp','exp'].forEach(function(side) {
                 var ref = p[side];
-                var live = merged.find(function(o){ return o.id === ref.id; });
+                var live = merged.find(function(o){ return o.id === ref.id && o.traffic.toLowerCase() === (ref.traffic||'').toLowerCase(); });
                 if (!live) return;
                 fields.forEach(function(f) {
                     if (live[f.k] !== undefined && ref[f.k] !== undefined && live[f.k] !== ref[f.k]) {
