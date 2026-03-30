@@ -4588,12 +4588,16 @@ function getFormSettings() {
     const ev = parseInt(document.getElementById('mon-ev')?.value) || 24;
     const eu = document.getElementById('mon-eu')?.value || 'hours';
     var ci = parseInt(document.getElementById('mon-check-interval')?.value) || 0;
+    var aspOn = document.getElementById('mon-autosyncpub-on')?.checked || false;
+    var aspInt = parseInt(document.getElementById('mon-autosyncpub-interval')?.value) || 30;
     return {
-        interval:      10,
-        intervalMin:   eu === 'days' ? ev * 1440 : ev * 60,
-        extractVal:    ev,
-        extractUnit:   eu,
-        checkInterval: ci,
+        interval:           10,
+        intervalMin:        eu === 'days' ? ev * 1440 : ev * 60,
+        extractVal:         ev,
+        extractUnit:        eu,
+        checkInterval:      ci,
+        autoSyncPubOn:      aspOn,
+        autoSyncPubInterval:aspInt,
         carriers:      ['MSC','Hapag','ONE','CMA','OOCL','ZIM','Yang Ming','Maersk','Evergreen'].filter(c => document.getElementById('mon-c-'+c.replace(' ',''))?.checked),
         containers:    ["20'","40'","40HC"].filter(t => document.getElementById('mon-t-'+t.replace("'",""))?.checked),
     };
@@ -4621,6 +4625,38 @@ function stop() {
 // ────────────────────────────────────────────────
 //  WIDGET GESTIONALE
 // ────────────────────────────────────────────────
+var _autoSyncPubTimer = null;
+function tcpStartAutoSyncPub(intervalMin) {
+    if (_autoSyncPubTimer) clearInterval(_autoSyncPubTimer);
+    _autoSyncPubTimer = null;
+    if (!intervalMin || intervalMin <= 0) return;
+    _autoSyncPubTimer = setInterval(function() {
+        var st = ss.load();
+        if (!st || !st.autoSyncPubOn) return;
+        var mw = window.tcpMonitorWin;
+        if (mw && !mw.closed && typeof mw.tcpSyncAndPublish === 'function') {
+            mw.tcpSyncAndPublish();
+        } else {
+            // Finestra non aperta: sync silenzioso senza aprire nulla
+            var tok = localStorage.getItem('tcp_gist_token') || '';
+            var gidc = localStorage.getItem('tcp_gist_id_collega') || '';
+            if (!tok || !gidc) return;
+            fetch('https://api.github.com/gists/' + gidc, {headers: {'Authorization': 'Bearer ' + tok}})
+                .then(function(r) { return r.json(); })
+                .then(function(gdata) {
+                    if (!gdata.files) return;
+                    if (gdata.files['tcp_pairs.json']) {
+                        var pp = JSON.parse(gdata.files['tcp_pairs.json'].content);
+                        if (pp.exported) localStorage.setItem('tcp_gist_collega_last_update', pp.exported);
+                    }
+                    // Sync silenzioso: solo badge, nessuna finestra
+                    tcpCheckCollegaSilent();
+                })
+                .catch(function() {});
+        }
+    }, intervalMin * 60000);
+}
+
 function tcpToggleAutoGist(mode) {
     var st = ss.load() || {};
     st.autoGist = (st.autoGist === mode) ? null : mode;
@@ -4662,6 +4698,15 @@ function buildWidget() {
                 style="width:36px;border:1px solid #002856;border-radius:3px;padding:2px 3px;color:#002856;font-size:11px;">
             <span>min (0=mai)</span>
         </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:5px;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;flex:1;">
+                <input id="mon-autosyncpub-on" type="checkbox" ${state?.autoSyncPubOn?'checked':''} style="cursor:pointer;">
+                <span style="white-space:nowrap;">Auto Sync+Pub ogni:</span>
+            </label>
+            <input id="mon-autosyncpub-interval" type="number" min="1" max="999" value="${state?.autoSyncPubInterval||30}"
+                style="width:36px;border:1px solid #002856;border-radius:3px;padding:2px 3px;color:#002856;font-size:11px;">
+            <span>min</span>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;">
             <button id="mon-auto-sync" style="background:${state?.autoGist==='sync'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='sync'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Sync</button>
             <button id="mon-auto-pub" style="background:${state?.autoGist==='pub'?'#1a65b8':'#e8ecf4'};color:${state?.autoGist==='pub'?'white':'#002856'};border:1px solid #002856;border-radius:4px;padding:3px 2px;font-size:10px;font-weight:bold;cursor:pointer;">Auto Pub</button>
@@ -4669,12 +4714,12 @@ function buildWidget() {
         </div>
         <div style="font-weight:bold;margin-bottom:3px;font-size:11px;">Compagnie:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;margin-bottom:7px;font-size:11px;">
-            ${['MSC','Hapag','ONE','CMA'].map(c=>`<label style="display:flex;align-items:center;gap:3px;"><input id="mon-c-${c}" type="checkbox" ${!state||state.carriers?.includes(c)?'checked':''}> ${c}</label>`).join('')}
+            ${['MSC','Hapag','ONE','CMA'].map(c=>`<label style="display:flex;align-items:center;gap:3px;"><input id="mon-c-${c}" type="checkbox" ${!state?.carriers||state.carriers.includes(c)?'checked':''}> ${c}</label>`).join('')}
             ${['OOCL','ZIM','Yang Ming','Maersk','Evergreen'].map(c=>`<label style="display:flex;align-items:center;gap:3px;"><input id="mon-c-${c.replace(' ','')}" type="checkbox" ${state&&state.carriers?.includes(c)?'checked':''}> ${c}</label>`).join('')}
         </div>
         <div style="font-weight:bold;margin-bottom:3px;font-size:11px;">Container:</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;margin-bottom:9px;font-size:11px;">
-            ${[["20'","20"],["40'","40"],["40HC","40HC"]].map(([l,id])=>`<label style="display:flex;align-items:center;gap:2px;"><input id="mon-t-${id}" type="checkbox" ${!state||state.containers?.includes(l)?'checked':''}> ${l}</label>`).join('')}
+            ${[["20'","20"],["40'","40"],["40HC","40HC"]].map(([l,id])=>`<label style="display:flex;align-items:center;gap:2px;"><input id="mon-t-${id}" type="checkbox" ${!state?.containers||state.containers.includes(l)?'checked':''}> ${l}</label>`).join('')}
         </div>
         <hr style="border:none;border-top:1px solid #c8d8f0;margin:6px 0;">
         <button id="mon-btn" style="width:100%;background:#002856;color:white;border:none;border-radius:4px;padding:6px;font-size:12px;cursor:pointer;font-weight:bold;margin-bottom:5px;">
@@ -4724,6 +4769,8 @@ function buildWidget() {
         if (win && !win.closed && win.tcpStartAutoCheck) {
             win.tcpStartAutoCheck(s.checkInterval || 0);
         }
+        // Avvia/ferma auto sync+pub
+        tcpStartAutoSyncPub(s.autoSyncPubOn ? (s.autoSyncPubInterval || 30) : 0);
         // Auto Gist dopo scansione
         var autoGist = s.autoGist;
         if (autoGist === 'sync') {
@@ -4763,6 +4810,10 @@ waitForTable(() => {
     buildWidget();
     const state = ss.load();
     if (state?.running) runCycle();
+    // Ripristina auto sync+pub se era attivo
+    if (state?.autoSyncPubOn && state?.autoSyncPubInterval) {
+        tcpStartAutoSyncPub(state.autoSyncPubInterval);
+    }
 });
 
 
