@@ -1531,7 +1531,35 @@ function buildReportHtml(pairs, orders) {
     var tappe=[]; try{tappe=JSON.parse(localStorage.getItem('tcp_tappe_custom')||'[]');}catch(e){}
     var stats=null; try{stats=JSON.parse(localStorage.getItem('tcp_stats')||'null');}catch(e){}
     var today=new Date(); today.setHours(0,0,0,0);
-    if(!stats&&pairs.length>0){stats={total:pairs.length,monthly:{},note:'init'};localStorage.setItem('tcp_stats',JSON.stringify(stats));}
+    // Ricostruisce mensili se stats era stato inizializzato senza dettaglio
+    if(stats&&stats.note==='init'&&stats.monthly&&Object.keys(stats.monthly).length===0&&pairs.length>0){
+        pairs.forEach(function(p){
+            if(!p.at)return;
+            var _mn=p.at.substring(0,7);
+            if(!stats.monthly[_mn])stats.monthly[_mn]={total:0};
+            stats.monthly[_mn].total=(stats.monthly[_mn].total||0)+1;
+            var _car=(p.imp&&p.imp.carrier)||'';
+            var _co=((p.imp&&p.imp.cont)||'').replace("'","");
+            var _k=_car+'_'+_co;
+            if(_car&&_co)stats.monthly[_mn][_k]=(stats.monthly[_mn][_k]||0)+1;
+        });
+        stats.note='reconstructed';
+        localStorage.setItem('tcp_stats',JSON.stringify(stats));
+    }
+    if(!stats&&pairs.length>0){
+        stats={total:pairs.length,monthly:{},note:'init'};
+        pairs.forEach(function(p){
+            if(!p.at)return;
+            var _mn=p.at.substring(0,7);
+            if(!stats.monthly[_mn])stats.monthly[_mn]={total:0};
+            stats.monthly[_mn].total=(stats.monthly[_mn].total||0)+1;
+            var _car=(p.imp&&p.imp.carrier)||'';
+            var _co=((p.imp&&p.imp.cont)||'').replace("'","");
+            var _k=_car+'_'+_co;
+            if(_car&&_co)stats.monthly[_mn][_k]=(stats.monthly[_mn][_k]||0)+1;
+        });
+        localStorage.setItem('tcp_stats',JSON.stringify(stats));
+    }
 
     function card(title,html){
         return '<div style="background:white;border:1px solid #d0dff0;border-radius:6px;padding:12px 16px;margin-bottom:12px;">'
@@ -2557,7 +2585,10 @@ function rPairs(){
     const c=document.getElementById('pairs-content');
     if(c)c.innerHTML=buildPairsHtml();
     const btn=document.querySelector('.tb[data-t="pairs"]');
-    if(btn)btn.textContent='🔗 Riutilizzi ('+lp().length+')';
+    var _today=new Date();_today.setHours(0,0,0,0);
+    var _ieri=new Date(_today);_ieri.setDate(_today.getDate()-1);
+    var _attivi=lp().filter(function(p){var de=pd(p.exp.delivery);return !de||de>=_ieri;}).length;
+    if(btn)btn.textContent='🔗 Riutilizzi ('+_attivi+')';
 }
 
 function cpPair(i){
@@ -3993,7 +4024,13 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         tcpCheckCollegaSilent();
         var _ci=parseInt(localStorage.getItem('tcp_gist_check_interval')||'0');
         if(_ci>0)tcpStartAutoCheck(_ci);
-    },3000);});
+    },3000);
+    setTimeout(function(){
+        var _pal={};
+        try{_pal=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
+        var _nAl=Object.values(_pal).filter(function(a){return !a.dismissed;}).length;
+        if(_nAl>0)tcpToast('\u26a0\ufe0f '+_nAl+' riutilizz'+(_nAl===1?'o':'i')+' con dati modificati',6000);
+    },500);});
 <\/script>
 </head><body style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
 
@@ -4551,14 +4588,6 @@ function openOrUpdate(settings, lastUpdate, newCount, newIds, modIds) {
     setTimeout(function(){URL.revokeObjectURL(_burl);},8000);
     // Layout flex gestito da DOMContentLoaded nella finestra
     // restoreFilters gestito da DOMContentLoaded
-    // Toast se ci sono nuovi alert coppie
-    try{
-        var _alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');
-        var _nAlert=Object.values(_alerts).filter(function(a){return !a.dismissed;}).length;
-        if(_nAlert>0&&win&&!win.closed&&win.tcpToast){
-            win.tcpToast('\u26a0\ufe0f '+_nAlert+' riutilizz'+(parseInt(_nAlert)===1?'o':'i')+' con dati modificati',6000);
-        }
-    }catch(e){}
 }
 
 // ────────────────────────────────────────────────
