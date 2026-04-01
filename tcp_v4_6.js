@@ -4844,23 +4844,28 @@ function buildWidget() {
         // Auto Gist dopo scansione
         var autoGist = s.autoGist;
         if (autoGist === 'sync') {
-            setTimeout(function() {
-                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncGist) {
+            (function _waitAndSync(attempts){
+                if(attempts<=0)return;
+                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpSyncGist==='function'){
                     window.tcpMonitorWin.tcpSyncGist();
-                }
-            }, 1500);
+                }else{setTimeout(function(){_waitAndSync(attempts-1);},800);}
+            })(10);
         } else if (autoGist === 'pub') {
-            setTimeout(function() {
-                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpPublishGist) {
+            (function _waitAndSync(attempts){
+                if(attempts<=0)return;
+                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpPublishGist==='function'){
                     window.tcpMonitorWin.tcpPublishGist();
-                }
-            }, 1500);
+                }else{setTimeout(function(){_waitAndSync(attempts-1);},800);}
+            })(10);
         } else if (autoGist === 'syncpub') {
-            setTimeout(function() {
-                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncAndPublish) {
+            (function _waitAndSync(attempts){
+                if(attempts<=0)return;
+                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpSyncAndPublish==='function'){
                     window.tcpMonitorWin.tcpSyncAndPublish();
+                }else{
+                    setTimeout(function(){_waitAndSync(attempts-1);},800);
                 }
-            }, 1500);
+            })(10);
         }
     });
 }
