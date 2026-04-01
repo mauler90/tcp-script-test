@@ -2556,8 +2556,14 @@ function buildPairsHtml(){
                 var _stableKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
                 var _al=_alerts[_stableKey];
                 var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _alSpan='<span data-k="'+_stableKey+'" onclick="tcpDismissPairAlert(this,event)" title="'+_alTip+'" style="cursor:pointer;background:#e67e22;color:white;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;margin-right:4px;">\u26a0\ufe0f Modificato \u2715</span>';
-                var _alBadge=(_al&&!_al.dismissed)?_alSpan:'';
+                var _alSpan=(_al&&!_al.dismissed)
+                    ?'<span style="display:inline-flex;align-items:center;gap:3px;margin-right:4px;">'
+                    +'<span style="background:#e67e22;color:white;border-radius:3px;padding:2px 5px;font-size:11px;font-weight:bold;">\u26a0\ufe0f</span>'
+                    +'<button data-k="'+_stableKey+'" onclick="tcpAccettaVariazione(this,event)" title="'+_alTip+'" style="cursor:pointer;background:#27ae60;color:white;border:none;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;">\u2713 Accetta</button>'
+                    +'<button data-k="'+_stableKey+'" onclick="tcpDismissPairAlert(this,event)" style="cursor:pointer;background:#888;color:white;border:none;border-radius:3px;padding:2px 7px;font-size:11px;">\u2715 Ignora</button>'
+                    +'</span>'
+                    :'';
+                var _alBadge=_alSpan;
                 var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
                     \${_alBadge}<span class="tag imp">📥 IMP</span>
@@ -3984,6 +3990,39 @@ function tcpDismissPairAlert(elOrIdx,ev){
     localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
     rPairs();
 }
+function tcpAccettaVariazione(elOrIdx,ev){
+    if(ev){ev.stopPropagation();ev.preventDefault();}
+    var key=typeof elOrIdx==='string'?elOrIdx:(elOrIdx&&elOrIdx.dataset?elOrIdx.dataset.k:null);
+    if(!key)return;
+    var pairs=lp();
+    var orders=lo();
+    var fields=['delivery','address','port','carrier','cont'];
+    var changed=false;
+    pairs.forEach(function(p){
+        var pKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+(( p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
+        if(pKey!==key)return;
+        ['imp','exp'].forEach(function(side){
+            var ref=p[side];
+            var live=orders.find(function(o){return o.id===ref.id&&(o.traffic||'').toLowerCase()===(ref.traffic||'').toLowerCase();});
+            if(!live)return;
+            fields.forEach(function(f){
+                if(live[f]!==undefined&&ref[f]!==undefined&&live[f]!==ref[f]){
+                    ref[f]=live[f];
+                    changed=true;
+                }
+            });
+        });
+    });
+    if(changed)sp(pairs);
+    // Rimuovi alert
+    var alerts={};
+    try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}')}catch(e){}
+    delete alerts[key];
+    localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
+    rPairs();
+    tcpToast('\u2713 Variazione accettata e coppia aggiornata');
+}
+
 function tcpSaveFilters(){
     var f={
         c:[...document.querySelectorAll('.fs-c:checked')].map(x=>x.value),
