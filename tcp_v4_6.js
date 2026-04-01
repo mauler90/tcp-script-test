@@ -2912,9 +2912,7 @@ function tcpDoMerge(incoming){
         if(!found&&!iNr&&!eNr){
             for(var j=0;j<existing.length;j++){
                 var ex2=existing[j];
-                var tl=function(s){return t(s).toLowerCase();};
-                if(tl(ex2.imp.carrier)===tl(inc.imp.carrier)&&tl(ex2.imp.address)===tl(inc.imp.address)&&tl(ex2.imp.delivery)===tl(inc.imp.delivery)
-                   &&tl(ex2.exp.carrier)===tl(inc.exp.carrier)&&tl(ex2.exp.address)===tl(inc.exp.address)){
+                if(t(ex2.imp.carrier)===t(inc.imp.carrier)&&t(ex2.imp.address)===t(inc.imp.address)&&t(ex2.imp.delivery)===t(inc.imp.delivery)){
                     found=ex2;foundType='exact';break;
                 }
             }
@@ -4844,28 +4842,23 @@ function buildWidget() {
         // Auto Gist dopo scansione
         var autoGist = s.autoGist;
         if (autoGist === 'sync') {
-            (function _waitAndSync(attempts){
-                if(attempts<=0)return;
-                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpSyncGist==='function'){
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncGist) {
                     window.tcpMonitorWin.tcpSyncGist();
-                }else{setTimeout(function(){_waitAndSync(attempts-1);},800);}
-            })(10);
-        } else if (autoGist === 'pub') {
-            (function _waitAndSync(attempts){
-                if(attempts<=0)return;
-                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpPublishGist==='function'){
-                    window.tcpMonitorWin.tcpPublishGist();
-                }else{setTimeout(function(){_waitAndSync(attempts-1);},800);}
-            })(10);
-        } else if (autoGist === 'syncpub') {
-            (function _waitAndSync(attempts){
-                if(attempts<=0)return;
-                if(window.tcpMonitorWin&&!window.tcpMonitorWin.closed&&typeof window.tcpMonitorWin.tcpSyncAndPublish==='function'){
-                    window.tcpMonitorWin.tcpSyncAndPublish();
-                }else{
-                    setTimeout(function(){_waitAndSync(attempts-1);},800);
                 }
-            })(10);
+            }, 1500);
+        } else if (autoGist === 'pub') {
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpPublishGist) {
+                    window.tcpMonitorWin.tcpPublishGist();
+                }
+            }, 1500);
+        } else if (autoGist === 'syncpub') {
+            setTimeout(function() {
+                if (window.tcpMonitorWin && !window.tcpMonitorWin.closed && window.tcpMonitorWin.tcpSyncAndPublish) {
+                    window.tcpMonitorWin.tcpSyncAndPublish();
+                }
+            }, 1500);
         }
     });
 }
