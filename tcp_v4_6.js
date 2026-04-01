@@ -2912,7 +2912,9 @@ function tcpDoMerge(incoming){
         if(!found&&!iNr&&!eNr){
             for(var j=0;j<existing.length;j++){
                 var ex2=existing[j];
-                if(t(ex2.imp.carrier)===t(inc.imp.carrier)&&t(ex2.imp.address)===t(inc.imp.address)&&t(ex2.imp.delivery)===t(inc.imp.delivery)){
+                var tl=function(s){return t(s).toLowerCase();};
+                if(tl(ex2.imp.carrier)===tl(inc.imp.carrier)&&tl(ex2.imp.address)===tl(inc.imp.address)&&tl(ex2.imp.delivery)===tl(inc.imp.delivery)
+                   &&tl(ex2.exp.carrier)===tl(inc.exp.carrier)&&tl(ex2.exp.address)===tl(inc.exp.address)){
                     found=ex2;foundType='exact';break;
                 }
             }
