@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2304,17 +2304,26 @@ function tcpParseAddress(address,cid){
     if(!stops.length||!stops[0].trim())stops=[''];
     stops.forEach(function(stop){
         var row=tcpMakeStopRow(cid);
-        var m=stop.trim().match(/^(.*?)\s*\(([A-Z]{2})\)\s*(\d{5})?/);
+        var s=stop.trim();
+        var city='',prov='',cap='';
+        // Formato 1 (form): "Citta (PV) 12345" oppure "Citta (PV)"
+        var m1=s.match(/^(.*?)\s*\(([A-Z]{2})\)\s*(\d{5})?/);
+        // Formato 2 (gestionale): "Citta (PV 12345)" — cap dentro le parentesi
+        var m2=s.match(/^(.*?)\s*\(([A-Z]{2})\s+(\d{5})\)/);
+        // Formato 3 (gestionale): "Citta 12345 (PV)" — cap prima della provincia
+        var m3=s.match(/^(.*?)\s+(\d{5})\s*\(([A-Z]{2})\)/);
+        if(m2){city=m2[1].trim();prov=m2[2];cap=m2[3];}
+        else if(m3){city=m3[1].trim();prov=m3[3];cap=m3[2];}
+        else if(m1){city=m1[1].trim();prov=m1[2];cap=m1[3]||'';}
+        else{city=s;}
+        // Pulizia: rimuove eventuale parentesi aperta residua in fondo alla citta
+        city=city.replace(/\s*\(\s*$/,'').trim();
         var cityInp=row.querySelector('.stop-city');
         var provInp=row.querySelector('.stop-prov');
         var capInp=row.querySelector('.stop-cap');
-        if(m){
-            if(cityInp)cityInp.value=m[1].trim();
-            if(provInp)provInp.value=m[2];
-            if(capInp&&m[3])capInp.value=m[3];
-        }else{
-            if(cityInp)cityInp.value=stop.trim();
-        }
+        if(cityInp)cityInp.value=city;
+        if(provInp)provInp.value=prov;
+        if(capInp)capInp.value=cap;
         c.appendChild(row);
     });
     tcpUpdateRemoveBtns(cid);
