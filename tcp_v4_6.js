@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2894,6 +2894,8 @@ function tcpDoMerge(incoming){
     incoming.forEach(function(inc){
         var rKey=(t(inc.imp&&inc.imp.contNr)||t(inc.imp&&inc.imp.id))+'|'+(t(inc.exp&&inc.exp.contNr)||t(inc.exp&&inc.exp.id));
         if(removed.some(function(r){return(r.key||r)===rKey;})){ignored++;return;}
+        var _incExpDel=pd((inc.exp&&inc.exp.delivery)||'');
+        if(_incExpDel&&_incExpDel<monday(0)){ignored++;return;}
         var iNr=t(inc.imp&&inc.imp.contNr);
         var eNr=t(inc.exp&&inc.exp.contNr);
         var found=null;var foundType=null;
