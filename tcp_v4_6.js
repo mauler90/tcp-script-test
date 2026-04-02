@@ -2307,17 +2307,17 @@ function tcpParseAddress(address,cid){
         var s=stop.trim();
         var city='',prov='',cap='';
         // Formato 1 (form): "Citta (PV) 12345" oppure "Citta (PV)"
-        var m1=s.match(/^(.*?)\s*\(([A-Z]{2})\)\s*(\d{5})?/);
+        var m1=s.match(/^(.*?)\\s*\\(([A-Z]{2})\\)\\s*(\\d{5})?/);
         // Formato 2 (gestionale): "Citta (PV 12345)" — cap dentro le parentesi
-        var m2=s.match(/^(.*?)\s*\(([A-Z]{2})\s+(\d{5})\)/);
+        var m2=s.match(/^(.*?)\\s*\\(([A-Z]{2})\\s+(\\d{5})\\)/);
         // Formato 3 (gestionale): "Citta 12345 (PV)" — cap prima della provincia
-        var m3=s.match(/^(.*?)\s+(\d{5})\s*\(([A-Z]{2})\)/);
+        var m3=s.match(/^(.*?)\\s+(\\d{5})\\s*\\(([A-Z]{2})\\)/);
         if(m2){city=m2[1].trim();prov=m2[2];cap=m2[3];}
         else if(m3){city=m3[1].trim();prov=m3[3];cap=m3[2];}
         else if(m1){city=m1[1].trim();prov=m1[2];cap=m1[3]||'';}
         else{city=s;}
         // Pulizia: rimuove eventuale parentesi aperta residua in fondo alla citta
-        city=city.replace(/\s*\(\s*$/,'').trim();
+        city=city.replace(/\\s*\\(\\s*$/,'').trim();
         var cityInp=row.querySelector('.stop-city');
         var provInp=row.querySelector('.stop-prov');
         var capInp=row.querySelector('.stop-cap');
