@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.3
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2896,7 +2896,7 @@ function tcpExportPairs(){
 // -- MERGE LOGIC --
 function tcpDoMerge(incoming){
     var existing=lp();
-    var toAdd=[];var conflicts=[];var ignored=0;
+    var toAdd=[];var conflicts=[];var ignored=0;var updates=[];
     var t=function(s){return(s||'').trim();};
     var removed=[];
     try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
@@ -2929,7 +2929,13 @@ function tcpDoMerge(incoming){
             }
         }
         if(!found){toAdd.push(inc);}
-        else if(foundType==='exact'){ignored++;}
+        else if(foundType==='exact'){
+            var _upd={};
+            if(inc.tappa&&!found.tappa)_upd.tappa=inc.tappa;
+            if(inc.km&&!found.km)_upd.km=inc.km;
+            if(Object.keys(_upd).length)updates.push({id:(found.imp.contNr||found.imp.id),upd:_upd});
+            ignored++;
+        }
         else{
             var _resolved=[];
             try{_resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
@@ -2945,12 +2951,17 @@ function tcpDoMerge(incoming){
             }
         }
     });
-    return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
+    return{toAdd:toAdd,conflicts:conflicts,ignored:ignored,updates:updates};
 }
-function tcpApplyMergePairs(toAdd,conflictResolutions){
+function tcpApplyMergePairs(toAdd,conflictResolutions,updates){
     _pushUndo();
     var pairs=lp();
     toAdd.forEach(function(p){pairs.push(p);});
+    // Applica aggiornamenti tappa/km su coppie esistenti
+    (updates||[]).forEach(function(u){
+        var p=pairs.find(function(x){return (x.imp.contNr||x.imp.id)===u.id;});
+        if(p)Object.assign(p,u.upd);
+    });
     var resolved=[];
     try{resolved=JSON.parse(localStorage.getItem('tcp_resolved_conflicts')||'[]');}catch(e){}
     conflictResolutions.forEach(function(res){
@@ -3004,10 +3015,12 @@ function tcpPublishGist(){
     var pairs=lp();
     var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
     var alias=[];try{alias=JSON.parse(localStorage.getItem('tcp_tratte_alias')||'[]');}catch(e){}
+    var tappe=[];try{tappe=JSON.parse(localStorage.getItem('tcp_tappe_custom')||'[]');}catch(e){}
     var files={
         'tcp_pairs.json':{content:JSON.stringify({version:1,exported:ts,pairs:pairs},null,2)},
         'tcp_tratte.json':{content:JSON.stringify({version:1,exported:ts,tratte:tratte},null,2)},
-        'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)}
+        'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)},
+        'tcp_tappe.json':{content:JSON.stringify({version:1,exported:ts,tappe:tappe},null,2)}
     };
     var body=JSON.stringify({description:'S.R.C sync',public:false,files:files});
     var url=gid?'https://api.github.com/gists/'+gid:'https://api.github.com/gists';
@@ -3055,6 +3068,15 @@ function tcpDoMergeAlias(incoming){
     if(added>0)localStorage.setItem('tcp_tratte_alias',JSON.stringify(existing));
     return{added:added};
 }
+function tcpDoMergeTappeCustom(incoming){
+    var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tappe_custom')||'[]');}catch(e){}
+    var added=0;
+    incoming.forEach(function(t){
+        if(existing.indexOf(t)<0){existing.push(t);added++;}
+    });
+    if(added>0)localStorage.setItem('tcp_tappe_custom',JSON.stringify(existing));
+    return added;
+}
 function tcpDoMergeTariffario(incoming){
     var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
     var toAdd=[];var conflicts=[];var ignored=0;
@@ -3088,6 +3110,10 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
             if(data.files['tcp_alias.json']){
                 var aa=JSON.parse(data.files['tcp_alias.json'].content);
                 if(aa.alias)tcpDoMergeAlias(aa.alias);
+            }
+            if(data.files['tcp_tappe.json']){
+                var tp=JSON.parse(data.files['tcp_tappe.json'].content);
+                if(tp.tappe)tcpDoMergeTappeCustom(tp.tappe);
             }
             _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:{toAdd:[],conflicts:[],ignored:0},source:'gist',autoPublish:autoPublish};
             tcpSetPairsBadge(0);
@@ -3123,6 +3149,10 @@ function tcpRipristinaGist(){
             if(data.files['tcp_alias.json']){
                 var aa=JSON.parse(data.files['tcp_alias.json'].content);
                 if(aa.alias)tcpDoMergeAlias(aa.alias);
+            }
+            if(data.files['tcp_tappe.json']){
+                var tp=JSON.parse(data.files['tcp_tappe.json'].content);
+                if(tp.tappe)tcpDoMergeTappeCustom(tp.tappe);
             }
             _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:{toAdd:[],conflicts:[],ignored:0},source:'ripristino',autoPublish:false};
             tcpShowSyncModal(_mergePayload);
@@ -3256,7 +3286,7 @@ function tcpApplyMergePairsModal(){
         var sel=document.querySelector('input[name="mpc'+ci+'"]:checked');
         return{ex:cf.ex,inc:cf.inc,choice:sel?sel.value:'mine'};
     });
-    tcpApplyMergePairs(pD.toAdd||[],pRes);
+    tcpApplyMergePairs(pD.toAdd||[],pRes,pD.updates||[]);
     tcpRefresh();
     // Tratte
     var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
