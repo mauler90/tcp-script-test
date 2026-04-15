@@ -4784,8 +4784,14 @@ function tcpToggleAutoGist(mode) {
 function buildWidget() {
     if (document.getElementById('tcp-mon-widget')) return;
     let state = ss.load();
-    if(!state){state={autoGist:'syncpub'};ss.save(state);}
-    else if(!state.autoGist){state.autoGist='syncpub';ss.save(state);}
+    if(!state){state={autoGist:'syncpub',autoSyncPubOn:true,autoSyncPubInterval:5,checkInterval:5};ss.save(state);}
+    else{
+        if(!state.autoGist){state.autoGist='syncpub';}
+        if(state.autoSyncPubOn===undefined){state.autoSyncPubOn=true;}
+        if(!state.autoSyncPubInterval){state.autoSyncPubInterval=5;}
+        if(!state.checkInterval){state.checkInterval=5;}
+        ss.save(state);
+    }
     const run = state?.running || false;
     const box = document.createElement('div');
     box.id = 'tcp-mon-widget';
@@ -4803,16 +4809,16 @@ function buildWidget() {
         </div>
         <div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:5px;">
             <span style="white-space:nowrap;">Controlla collega ogni:</span>
-            <input id="mon-check-interval" type="number" min="0" max="999" value="${state?.checkInterval||10}"
+            <input id="mon-check-interval" type="number" min="0" max="999" value="${state?.checkInterval||5}"
                 style="width:36px;border:1px solid #002856;border-radius:3px;padding:2px 3px;color:#002856;font-size:11px;">
             <span>min (0=mai)</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:5px;">
             <label style="display:flex;align-items:center;gap:4px;cursor:pointer;flex:1;">
-                <input id="mon-autosyncpub-on" type="checkbox" ${state?.autoSyncPubOn?'checked':''} style="cursor:pointer;">
+                <input id="mon-autosyncpub-on" type="checkbox" ${state?.autoSyncPubOn!==false?'checked':''} style="cursor:pointer;">
                 <span style="white-space:nowrap;">Auto Sync+Pub ogni:</span>
             </label>
-            <input id="mon-autosyncpub-interval" type="number" min="1" max="999" value="${state?.autoSyncPubInterval||30}"
+            <input id="mon-autosyncpub-interval" type="number" min="1" max="999" value="${state?.autoSyncPubInterval||5}"
                 style="width:36px;border:1px solid #002856;border-radius:3px;padding:2px 3px;color:#002856;font-size:11px;">
             <span>min</span>
         </div>
@@ -4879,7 +4885,7 @@ function buildWidget() {
             win.tcpStartAutoCheck(s.checkInterval || 0);
         }
         // Avvia/ferma auto sync+pub
-        tcpStartAutoSyncPub(s.autoSyncPubOn ? (s.autoSyncPubInterval || 30) : 0);
+        tcpStartAutoSyncPub(s.autoSyncPubOn ? (s.autoSyncPubInterval || 5) : 0);
         // Auto Gist dopo scansione
         var autoGist = s.autoGist;
         if (autoGist === 'sync') {
