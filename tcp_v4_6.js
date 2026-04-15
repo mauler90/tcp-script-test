@@ -1443,7 +1443,7 @@ function collect(intervalMin, carriers, containers) {
             ['imp','exp'].forEach(function(side) {
                 var ref = p[side];
                 var live = merged.find(function(o){ return o.id === ref.id && o.traffic.toLowerCase() === (ref.traffic||'').toLowerCase(); });
-                if (!live) return;
+                if (!live || live.missing) return;
                 fields.forEach(function(f) {
                     if (live[f.k] !== undefined && ref[f.k] !== undefined && live[f.k] !== ref[f.k]) {
                         changes.push(side.toUpperCase() + ' ' + f.label + ': ' + ref[f.k] + ' -> ' + live[f.k]);
@@ -2545,8 +2545,8 @@ function buildPairsHtml(){
     const allPairs=lp();
     if(!allPairs.length)return'<p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun abbinamento. Seleziona un Import + Export nella tab Viaggi e clicca Abbina.</p>';
     const today=new Date();today.setHours(0,0,0,0);
-    const ieri=new Date(today);ieri.setDate(today.getDate()-1);
-    const pairs=allPairs.filter((p,i)=>{const de=pd(p.exp.delivery);return !de||de>=ieri;});
+    const monStart=monday(0);
+    const pairs=allPairs.filter((p,i)=>{const de=pd(p.exp.delivery);return !de||de>=monStart;});
     const hidden=allPairs.length-pairs.length;
     if(!pairs.length)return'<p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun riutilizzo attivo.</p>'+(hidden?'<p style="color:#aaa;font-size:11px;text-align:center;">'+hidden+' riutilizzi precedenti nascosti</p>':'');
     const groups={};
@@ -2601,8 +2601,8 @@ function rPairs(){
     if(c)c.innerHTML=buildPairsHtml();
     const btn=document.querySelector('.tb[data-t="pairs"]');
     var _today=new Date();_today.setHours(0,0,0,0);
-    var _ieri=new Date(_today);_ieri.setDate(_today.getDate()-1);
-    var _attivi=lp().filter(function(p){var de=pd(p.exp.delivery);return !de||de>=_ieri;}).length;
+    var _monStart=monday(0);
+    var _attivi=lp().filter(function(p){var de=pd(p.exp.delivery);return !de||de>=_monStart;}).length;
     if(btn)btn.textContent='🔗 Riutilizzi ('+_attivi+')';
 }
 
@@ -4784,13 +4784,16 @@ function tcpToggleAutoGist(mode) {
 function buildWidget() {
     if (document.getElementById('tcp-mon-widget')) return;
     let state = ss.load();
-    if(!state){state={autoGist:'syncpub',autoSyncPubOn:true,autoSyncPubInterval:5,checkInterval:5};ss.save(state);}
+    if(!state){state={autoGist:'syncpub',autoSyncPubOn:true,autoSyncPubInterval:5,checkInterval:5,_v:2};ss.save(state);}
     else{
-        if(!state.autoGist){state.autoGist='syncpub';}
-        if(state.autoSyncPubOn===undefined){state.autoSyncPubOn=true;}
-        if(!state.autoSyncPubInterval){state.autoSyncPubInterval=5;}
-        if(!state.checkInterval){state.checkInterval=5;}
-        ss.save(state);
+        if(!state._v||state._v<2){
+            state.autoGist=state.autoGist||'syncpub';
+            state.autoSyncPubOn=true;
+            state.autoSyncPubInterval=5;
+            state.checkInterval=5;
+            state._v=2;
+            ss.save(state);
+        }
     }
     const run = state?.running || false;
     const box = document.createElement('div');
