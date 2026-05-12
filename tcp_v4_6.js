@@ -117,6 +117,7 @@ function normalizeCarrier(text) {
 function normalizeContainer(text) {
     if (/reef/i.test(text))      return "40'R";
     if (/open.?top/i.test(text)) return "40OT";
+    if (/hard.?top/i.test(text)) return null;
     if (/20/i.test(text))        return "20'";
     if (/40/i.test(text) && /high|hc/i.test(text)) return "40HC";
     if (/40/i.test(text))        return "40'";
@@ -1172,6 +1173,7 @@ function ncr(t) {
 function nct(t) {
     if (/reef/i.test(t))      return "40'R";
     if (/open.?top/i.test(t)) return "40OT";
+    if (/hard.?top/i.test(t)) return null;
     if (/20/i.test(t))        return "20'";
     if (/40/i.test(t) && /high|hc/i.test(t)) return '40HC';
     if (/40/i.test(t))        return "40'";
