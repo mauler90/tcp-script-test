@@ -1739,7 +1739,9 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
     const fuelVal = parseFloat(localStorage.getItem('tcp_fuel') || '0');
     const tratteHtml = buildTratteHtml();
     const reportHtml = buildReportHtml(pairs, ls.orders());
-    const addiz = (function(){ try{ return JSON.parse(localStorage.getItem('tcp_addizionali')||'null'); }catch(e){} return null; })() || {stessoGiorno:{base:100,hc:30},giornoSucc:{base:100,sosta:30,hc:30},weekend:{base:50,hc:30},altri:{base:50,hc:30}};
+    const _addizRaw=(function(){try{return JSON.parse(localStorage.getItem('tcp_addizionali')||'null');}catch(e){}return null;})();
+    const _addizDef={stessoGiorno:{base:100,hc:30},giornoSucc:{base:100,notte:30,hc:30},weekend:{base:50,hc:30},altri:{base:50,hc:30}};
+    const addiz=(_addizRaw&&_addizRaw.stessoGiorno&&_addizRaw.giornoSucc&&_addizRaw.weekend&&_addizRaw.altri)?_addizRaw:_addizDef;
 
     // ── Tab Viaggi: righe tabella ──
     const tableRows = orders.length === 0
