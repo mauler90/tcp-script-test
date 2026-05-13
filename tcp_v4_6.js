@@ -3084,7 +3084,7 @@ function tcpDoMergeTappeCustom(incoming){
     return added;
 }
 function tcpDoMergeManuali(incoming){
-    var orders=lo();
+    var orders=[];try{orders=JSON.parse(localStorage.getItem('tcp_mon_orders')||'[]');}catch(e){orders=[];}
     var changed=false;
     var added=0;var updated=0;
     incoming.forEach(function(inc){
@@ -3107,7 +3107,7 @@ function tcpDoMergeManuali(incoming){
             if(dirty){ex.manualFrom='collega';updated++;changed=true;}
         }
     });
-    if(changed)ls.saveOrders(orders);
+    if(changed){try{localStorage.setItem('tcp_mon_orders',JSON.stringify(orders));}catch(e){}}
     return{added:added,updated:updated};
 }
 function tcpDoMergeTariffario(incoming){
