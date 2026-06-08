@@ -43,6 +43,11 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+// Tasto Invio per fare login
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
 async function doLogin() {
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
@@ -64,7 +69,6 @@ async function doLogin() {
     return;
   }
 
-  // Salva il token e reindirizza alla webapp
   localStorage.setItem('src_token', data.session.access_token);
   localStorage.setItem('src_user_id', data.user.id);
   msg.innerHTML = '<span class="ok">Accesso effettuato. Caricamento...</span>';
