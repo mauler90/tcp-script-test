@@ -305,7 +305,7 @@ async function doLogout() {
   await checkAuth();
   await syncAll();
   // Auto-refresh ogni 60 secondi
-  setInterval(syncAll, 60000);
+  setInterval(syncAll, 30000);
 })();
 </script>
 </body>
