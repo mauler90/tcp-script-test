@@ -3007,8 +3007,36 @@ function tcpImportPairsFile(input){
     reader.readAsText(file,'UTF-8');
 }
 // -- PUBLISH SU GIST --
-function tcpSyncBackend(pairs,tratte,alias,tappe){
-    var sbToken=localStorage.getItem('src_token')||'';
+async function tcpGetValidToken(){
+    var sbSession=null;
+    try{sbSession=JSON.parse(localStorage.getItem('sb-rdjldluwqijjahnqqdur-auth-token'));}catch(e){}
+    if(!sbSession)return localStorage.getItem('src_token')||'';
+    var exp=sbSession.expires_at||0;
+    var now=Math.floor(Date.now()/1000);
+    if(exp-now>60){return sbSession.access_token||localStorage.getItem('src_token')||'';}
+    // Token scaduto o in scadenza: rinnova
+    var refreshToken=sbSession.refresh_token||'';
+    if(!refreshToken)return localStorage.getItem('src_token')||'';
+    try{
+        var r=await fetch('https://rdjldluwqijjahnqqdur.supabase.co/auth/v1/token?grant_type=refresh_token',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkamxkbHV3cWlqamFobnFxZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDcyMjYsImV4cCI6MjA5NjIyMzIyNn0.TzOGtBntu8aRuGn3bG2KoRg6i_Z_uHsuz1T45tAhon4'},
+            body:JSON.stringify({refresh_token:refreshToken})
+        });
+        var data=await r.json();
+        if(data.access_token){
+            sbSession.access_token=data.access_token;
+            sbSession.refresh_token=data.refresh_token||refreshToken;
+            sbSession.expires_at=Math.floor(Date.now()/1000)+3600;
+            localStorage.setItem('sb-rdjldluwqijjahnqqdur-auth-token',JSON.stringify(sbSession));
+            localStorage.setItem('src_token',data.access_token);
+            return data.access_token;
+        }
+    }catch(e){}
+    return localStorage.getItem('src_token')||'';
+}
+async function tcpSyncBackend(pairs,tratte,alias,tappe){
+    var sbToken=await tcpGetValidToken();
     if(!sbToken)return;
     var base='https://riutilizzi.netlify.app/.netlify/functions/api';
     var h={'Content-Type':'application/json','Authorization':'Bearer '+sbToken};
@@ -3017,8 +3045,8 @@ function tcpSyncBackend(pairs,tratte,alias,tappe){
     fetch(base+'/alias',{method:'POST',headers:h,body:JSON.stringify({data:alias})}).catch(function(){});
     fetch(base+'/tappe',{method:'POST',headers:h,body:JSON.stringify({tappe:tappe})}).catch(function(){});
 }
-function tcpSyncBackendOrders(orders){
-    var sbToken=localStorage.getItem('src_token')||'';
+async function tcpSyncBackendOrders(orders){
+    var sbToken=await tcpGetValidToken();
     if(!sbToken)return;
     var base='https://riutilizzi.netlify.app/.netlify/functions/api';
     var h={'Content-Type':'application/json','Authorization':'Bearer '+sbToken};
