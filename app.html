@@ -18,38 +18,42 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 .syncbar .dot.err{background:#e74c3c;}
 .syncbar .dot.loading{background:#f0a500;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.tabbar{display:flex;background:#e0eaf8;border-bottom:2px solid #002856;flex-shrink:0;align-items:center;padding-right:6px;flex-wrap:wrap;}
-.tb{padding:9px 18px;cursor:pointer;font-weight:bold;font-size:12px;color:#002856;border:none;background:none;border-bottom:3px solid transparent;}
+.tabbar{display:flex;background:#e0eaf8;border-bottom:2px solid #002856;flex-shrink:0;align-items:center;flex-wrap:wrap;}
+.tb{padding:9px 16px;cursor:pointer;font-weight:bold;font-size:12px;color:#002856;border:none;background:none;border-bottom:3px solid transparent;white-space:nowrap;}
 .tb.on{border-bottom:3px solid #e74c3c;background:white;}
 .tb:hover:not(.on){background:#d0daf0;}
 .tc{display:none;padding:14px 18px;overflow-y:auto;flex:1;}
 .tc.on{display:block;}
+#t-viaggi.on{display:flex;flex-direction:column;padding:0;overflow:hidden;}
+/* TABELLA VIAGGI */
+.filter-bar{background:#f0f4fa;border-bottom:1px solid #d0dff0;padding:6px 12px;font-size:11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;}
+.actions{display:flex;gap:6px;align-items:center;padding:8px 12px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid #e0eaf8;background:#f8fbff;}
+.actions button{color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;}
+#btn-abbina{background:#27ae60;display:none;font-weight:bold;}
+table.mt{width:100%;border-collapse:collapse;background:white;font-size:11px;}
+table.mt thead th{position:sticky;top:0;z-index:6;background:#bdf3fc;color:#002856;font-weight:bold;padding:7px 8px;text-align:left;border-bottom:2px solid #002856;white-space:nowrap;}
+th.sort{cursor:pointer;user-select:none;}
+th.sort:hover{background:#a0e8f8;}
+table.mt tbody tr{border-bottom:1px solid #e5eef8;transition:background 0.2s;}
+table.mt tbody tr.dim{opacity:0.2;}
+table.mt tbody td{padding:5px 8px;vertical-align:middle;}
 /* PAIRS */
 .pr{display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:8px 10px;margin-bottom:5px;border-radius:5px;font-size:11px;}
 .tag{border-radius:3px;padding:2px 6px;font-size:10px;font-weight:bold;background:#002856;color:white;}
 .tag.imp{background:#1a65b8;}
 .tag.exp{background:#27ae60;}
 .f{padding:1px 3px;}
-.dim{color:#888;}
+.dim-txt{color:#888;}
 .sep{color:#888;font-weight:bold;padding:0 3px;}
 .sec-title{font-size:12px;font-weight:bold;color:#002856;background:#d0daf0;padding:5px 12px;border-radius:4px;margin:10px 0 5px;}
 .cbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#002856;color:white;margin-left:2px;}
 .dbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#c0392b;color:white;margin-left:2px;}
-.pairs-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
-.pairs-actions button{color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;}
 /* TRATTE */
-.tratte-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
-.tratte-toolbar input{flex:1;min-width:180px;border:1px solid #aac4e0;border-radius:4px;padding:5px 10px;font-size:11px;}
 .tratta-row{display:flex;align-items:center;background:white;border:1px solid #d0dff0;border-radius:4px;margin-bottom:4px;padding:5px 10px;font-size:12px;gap:6px;flex-wrap:wrap;}
 .tratta-row:nth-child(even){background:#f8fbff;}
-.porto{font-size:10px;color:#888;}
 .tratta-km{font-weight:bold;color:#002856;margin-left:auto;white-space:nowrap;}
 .tratta-tappa{color:#1a7a1a;font-weight:bold;font-size:11px;}
 /* TARIFFARIO */
-.tar-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
-.tar-toolbar input[type=number]{width:80px;border:1px solid #aac4e0;border-radius:4px;padding:5px 8px;font-size:12px;}
-.tar-toolbar label{font-size:12px;color:#555;}
-.tar-jump{display:flex;gap:6px;align-items:center;}
 .tar-table{border-collapse:collapse;font-size:12px;min-width:380px;}
 .tar-table thead th{background:#002856;color:white;padding:7px 12px;text-align:right;white-space:nowrap;}
 .tar-table thead th:first-child{text-align:left;}
@@ -59,12 +63,8 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 .tar-finale{color:#1a5c1a;font-weight:bold;text-align:right;}
 .tar-grezzo{text-align:right;color:#555;}
 .tar-highlight{background:#fff3cd !important;}
-/* IMPORT CSV */
-.csv-zone{border:2px dashed #aac4e0;border-radius:8px;padding:20px;text-align:center;margin-bottom:16px;cursor:pointer;color:#555;font-size:12px;}
+.csv-zone{border:2px dashed #aac4e0;border-radius:8px;padding:14px;text-align:center;margin-bottom:12px;cursor:pointer;color:#555;font-size:12px;display:inline-block;}
 .csv-zone:hover{background:#f0f5ff;}
-/* PLACEHOLDER */
-.placeholder{text-align:center;padding:60px 20px;color:#aaa;}
-.placeholder h3{font-size:18px;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -85,35 +85,87 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 </div>
 
 <div class="tabbar">
+  <button class="tb" data-t="viaggi" onclick="showTab('viaggi')">🚛 Viaggi (<span id="cnt-viaggi">0</span>)</button>
   <button class="tb on" data-t="pairs" onclick="showTab('pairs')">🔗 Riutilizzi (<span id="cnt-pairs">0</span>)</button>
-  <button class="tb" data-t="viaggi" onclick="showTab('viaggi')">🚛 Viaggi</button>
   <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte (<span id="cnt-tratte">0</span>)</button>
   <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💶 Tariffario</button>
   <button class="tb" data-t="report" onclick="showTab('report')">📊 Report</button>
 </div>
 
+<!-- TAB VIAGGI -->
+<div class="tc" id="t-viaggi">
+  <div class="filter-bar">
+    <span style="font-weight:bold;color:#002856;">👁 Mostra solo:</span>
+    <label><input type="checkbox" class="fs-c" value="MSC" onchange="applyShowOnly()"> MSC</label>
+    <label><input type="checkbox" class="fs-c" value="Hapag" onchange="applyShowOnly()"> Hapag</label>
+    <label><input type="checkbox" class="fs-c" value="ONE" onchange="applyShowOnly()"> ONE</label>
+    <label><input type="checkbox" class="fs-c" value="CMA" onchange="applyShowOnly()"> CMA</label>
+    <label><input type="checkbox" class="fs-c" value="OOCL" onchange="applyShowOnly()"> OOCL</label>
+    <label><input type="checkbox" class="fs-c" value="ZIM" onchange="applyShowOnly()"> ZIM</label>
+    <label><input type="checkbox" class="fs-c" value="Maersk" onchange="applyShowOnly()"> Maersk</label>
+    <label><input type="checkbox" class="fs-c" value="Evergreen" onchange="applyShowOnly()"> Evergreen</label>
+    &nbsp;|&nbsp;
+    <label><input type="checkbox" class="fs-co" value="20'" onchange="applyShowOnly()"> 20'</label>
+    <label><input type="checkbox" class="fs-co" value="40'" onchange="applyShowOnly()"> 40'</label>
+    <label><input type="checkbox" class="fs-co" value="40HC" onchange="applyShowOnly()"> 40HC</label>
+    &nbsp;|&nbsp;
+    <label><input type="checkbox" class="fs-t" value="import" onchange="applyShowOnly()"> Import</label>
+    <label><input type="checkbox" class="fs-t" value="export" onchange="applyShowOnly()"> Export</label>
+    &nbsp;|&nbsp;
+    <span style="color:#666;">Porto:</span>
+    <label><input type="checkbox" class="fs-p" value="la spezia" onchange="applyShowOnly()"> SPZ</label>
+    <label><input type="checkbox" class="fs-p" value="livorno" onchange="applyShowOnly()"> LIV</label>
+    <label><input type="checkbox" class="fs-p" value="genova" onchange="applyShowOnly()"> GOA</label>
+    &nbsp;|&nbsp;
+    <label><input type="checkbox" id="fs-hl" onchange="applyShowOnly()"> ★ Evidenziati</label>
+  </div>
+  <div class="actions">
+    <button onclick="clearAll()" style="background:#c0392b;">✕ Svuota lista</button>
+    <button id="btn-abbina" onclick="doAbbina()">🔗 Abbina</button>
+    <button onclick="deseleziona()" style="background:#888;">✕ Deseleziona</button>
+    <input id="search-viaggi" type="text" placeholder="container, indirizzo, porto..." style="border:1px solid #aac4e0;border-radius:4px;padding:4px 10px;font-size:11px;width:220px;">
+    <button onclick="cercaViaggi()" style="background:#002856;">🔍 Cerca</button>
+    <button onclick="document.getElementById('search-viaggi').value='';cercaViaggi();" style="background:#888;">✕</button>
+    <span id="visible-count" style="margin-left:auto;font-size:11px;color:#555;font-weight:bold;"></span>
+  </div>
+  <div style="overflow-y:auto;flex:1;min-height:0;">
+    <table class="mt">
+      <thead><tr>
+        <th style="width:18px;"></th>
+        <th id="th-traffic" class="sort" onclick="sortBy('traffic')">Traffic</th>
+        <th style="width:14px;"></th>
+        <th id="th-carrier" class="sort" onclick="sortBy('carrier')">Carrier</th>
+        <th>Container</th>
+        <th>ADR</th>
+        <th id="th-delivery" class="sort" onclick="sortBy('delivery')">Delivery</th>
+        <th>Address</th>
+        <th>Port</th>
+        <th>Cont. Nr</th>
+        <th>RT</th>
+        <th>Branch</th>
+        <th>Req. LEF</th>
+        <th>LDV</th>
+        <th>Azioni</th>
+        <th id="th-created" class="sort" onclick="sortBy('created')">Created On</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- TAB RIUTILIZZI -->
 <div class="tc on" id="t-pairs">
-  <div class="pairs-actions">
-    <button onclick="syncAll()" style="background:#1a65b8;">↺ Ricarica</button>
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+    <button onclick="syncAll()" style="background:#1a65b8;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;">↺ Ricarica</button>
     <span style="color:#888;font-size:11px;" id="lbl-pairs-count"></span>
   </div>
   <div id="pairs-content"><div style="text-align:center;padding:40px;color:#888;">Caricamento...</div></div>
 </div>
 
-<!-- TAB VIAGGI -->
-<div class="tc" id="t-viaggi">
-  <div class="placeholder">
-    <h3>🚛 Viaggi</h3>
-    <p>I viaggi vengono estratti dal gestionale tramite il bookmarklet S.R.C.<br>
-    Usa il bookmarklet come sempre — i dati arriveranno qui automaticamente.</p>
-  </div>
-</div>
-
 <!-- TAB TRATTE -->
 <div class="tc" id="t-tratte">
-  <div class="tratte-toolbar">
-    <input type="text" id="tratte-search" placeholder="Filtra per città, porto, km..." oninput="filtraTratte(this.value)">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <input type="text" id="tratte-search" placeholder="Filtra per città, porto, km..." oninput="filtraTratte(this.value)" style="flex:1;min-width:180px;border:1px solid #aac4e0;border-radius:4px;padding:5px 10px;font-size:11px;">
     <button onclick="filtraTratte('');document.getElementById('tratte-search').value='';" style="background:#888;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">✕ Reset</button>
     <span style="color:#888;font-size:11px;" id="lbl-tratte-count"></span>
   </div>
@@ -122,26 +174,22 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 
 <!-- TAB TARIFFARIO -->
 <div class="tc" id="t-tariffario">
-  <div class="tar-toolbar">
-    <label>Fuel surcharge: <input type="number" id="tar-fuel" value="0" min="0" max="100" step="0.5" oninput="renderTariffario()"> %</label>
-    <div class="tar-jump">
-      <label>Vai a km: <input type="number" id="tar-jump-km" min="100" max="1500" step="1" placeholder="es. 350"></label>
-      <button onclick="jumpToKm()" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">Vai</button>
-    </div>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <label style="font-size:12px;">Fuel surcharge: <input type="number" id="tar-fuel" value="0" min="0" max="100" step="0.5" oninput="renderTariffario()" style="width:65px;border:1px solid #aac4e0;border-radius:4px;padding:3px 6px;font-size:12px;"> %</label>
+    <label style="font-size:12px;">Vai a km: <input type="number" id="tar-jump-km" min="100" max="1500" placeholder="es. 350" style="width:80px;border:1px solid #aac4e0;border-radius:4px;padding:3px 6px;font-size:12px;"></label>
+    <button onclick="jumpToKm()" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">Vai</button>
     <div class="csv-zone" onclick="document.getElementById('csv-input').click()">
-      📂 Clicca per importare tariffario CSV
+      📂 Importa CSV tariffario
       <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="importCSV(this)">
     </div>
-    <button onclick="saveTariffario()" style="background:#27ae60;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;">💾 Salva tariffario</button>
+    <button onclick="saveTariffario()" style="background:#27ae60;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;">💾 Salva</button>
   </div>
   <div style="overflow-x:auto;">
     <table class="tar-table" id="tar-table">
       <thead><tr>
         <th style="text-align:left;">Km</th>
-        <th>Grezzo 20'</th>
-        <th>Finale 20'</th>
-        <th>Grezzo 40'/40HC</th>
-        <th>Finale 40'/40HC</th>
+        <th>Grezzo 20'</th><th>Finale 20'</th>
+        <th>Grezzo 40'/40HC</th><th>Finale 40'/40HC</th>
       </tr></thead>
       <tbody id="tar-body"></tbody>
     </table>
@@ -150,9 +198,9 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 
 <!-- TAB REPORT -->
 <div class="tc" id="t-report">
-  <div class="placeholder">
-    <h3>📊 Report</h3>
-    <p>In arrivo nella prossima versione.</p>
+  <div style="text-align:center;padding:60px 20px;color:#aaa;">
+    <h3 style="font-size:18px;margin-bottom:8px;">📊 Report</h3>
+    <p style="font-size:13px;">In arrivo nella prossima versione.</p>
   </div>
 </div>
 
@@ -170,7 +218,9 @@ const PAL = {
 };
 
 let token = localStorage.getItem('src_token');
-let allPairs = [], allTratte = [], tariffario = [];
+let allOrders = [], allPairs = [], allTratte = [], tariffario = [];
+let selI = null, selE = null;
+let sortCol = null, sortAsc = true;
 
 // ── AUTH ──
 async function checkAuth() {
@@ -195,18 +245,18 @@ function showTab(name) {
 }
 
 // ── API ──
-async function apiGet(endpoint) {
-  const r = await fetch(API + endpoint, { headers: { 'Authorization': 'Bearer ' + token } });
-  if (!r.ok) throw new Error('API error ' + r.status);
+async function apiGet(ep) {
+  const r = await fetch(API + ep, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (!r.ok) throw new Error('API ' + r.status);
   return r.json();
 }
-async function apiPost(endpoint, body) {
-  const r = await fetch(API + endpoint, {
+async function apiPost(ep, body) {
+  const r = await fetch(API + ep, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
     body: JSON.stringify(body)
   });
-  if (!r.ok) throw new Error('API error ' + r.status);
+  if (!r.ok) throw new Error('API ' + r.status);
   return r.json();
 }
 
@@ -214,42 +264,284 @@ async function apiPost(endpoint, body) {
 async function syncAll() {
   setSyncStatus('loading', 'Sincronizzazione...');
   try {
-    const [pairsRes, tratteRes, tarRes] = await Promise.all([
-      apiGet('/pairs'),
-      apiGet('/tratte'),
-      apiGet('/tariffario')
+    const [oRes, pRes, tRes, tarRes] = await Promise.all([
+      apiGet('/orders'), apiGet('/pairs'), apiGet('/tratte'), apiGet('/tariffario')
     ]);
-    allPairs  = (pairsRes  && pairsRes.length)  ? (pairsRes[0].data  || []) : [];
-    allTratte = (tratteRes && tratteRes.length)  ? (tratteRes[0].data || []) : [];
+    allOrders  = (oRes   && oRes.length)   ? (oRes[0].data   || []) : [];
+    allPairs   = (pRes   && pRes.length)   ? (pRes[0].data   || []) : [];
+    allTratte  = (tRes   && tRes.length)   ? (tRes[0].data   || []) : [];
     tariffario = tarRes || [];
+    renderViaggi();
     renderPairs();
     renderTratte('');
     renderTariffario();
     setSyncStatus('ok', 'Sincronizzato');
     document.getElementById('lbl-last-sync').textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
   } catch(e) {
-    setSyncStatus('err', 'Errore connessione');
+    setSyncStatus('err', 'Errore: ' + e.message);
   }
 }
 
-function setSyncStatus(stato, msg) {
+function setSyncStatus(s, msg) {
   const dot = document.getElementById('sync-dot');
-  dot.className = 'dot' + (stato === 'err' ? ' err' : stato === 'loading' ? ' loading' : '');
+  dot.className = 'dot' + (s === 'err' ? ' err' : s === 'loading' ? ' loading' : '');
   document.getElementById('sync-msg').textContent = msg;
 }
 
-// ── UTILITY DATE ──
+// ── UTILITY ──
 function pd(str) {
   if (!str) return null;
   const m = str.match(/(\d{2})\/(\d{2})\/(\d{2})/);
   if (!m) return null;
   return new Date('20' + m[3] + '-' + m[2] + '-' + m[1]);
 }
+function pdt(s) {
+  const m = s ? s.match(/(\d{2})\/(\d{2})\/(\d{2}),?\s*(\d{2}):(\d{2})/) : null;
+  if (!m) return 0;
+  return new Date(2000+parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]),parseInt(m[4]),parseInt(m[5])).getTime();
+}
 function monday() {
   const d = new Date(); d.setHours(0,0,0,0);
   const day = d.getDay() || 7;
   d.setDate(d.getDate() - day + 1);
   return d;
+}
+function compat(ic, ec) {
+  if (ic === "20'") return ec === "20'";
+  if (ic === '40HC') return ec === "40'" || ec === '40HC';
+  if (ic === "40'") return ec === "40'";
+  return false;
+}
+function pairedIds() {
+  const s = new Set();
+  allPairs.forEach(p => { s.add(p.imp.id); s.add(p.exp.id); });
+  return s;
+}
+
+// ── RENDER VIAGGI ──
+function renderViaggi() {
+  const tbody = document.getElementById('tbody');
+  const pid = pairedIds();
+  document.getElementById('cnt-viaggi').textContent = allOrders.length;
+
+  if (!allOrders.length) {
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:30px;color:#aaa;">Nessun viaggio. Avvia una scansione dal gestionale con il bookmarklet S.R.C.</td></tr>';
+    updCounter();
+    return;
+  }
+
+  tbody.innerHTML = allOrders.map(o => {
+    const sid = o.id.replace(/[^a-z0-9]/gi, '_');
+    const isPaired = pid.has(o.id);
+    let rowBg = '';
+    if (o.missing) rowBg = 'background:#e0e0e0;opacity:0.55;';
+    else if (isPaired) rowBg = 'background:#d4f5d4;';
+    else if (o.highlighted) rowBg = 'background:#fff3cd;';
+    const missingBadge = o.missing ? ' <span style="background:#888;color:white;border-radius:3px;padding:1px 5px;font-size:8px;vertical-align:middle;">non presente</span>' : '';
+    const rtIcon = o.reqTruck ? '<span style="color:#c0392b;font-weight:bold;font-size:13px;">✕</span>' : '';
+    const hlBg = o.highlighted ? '#f0a500' : '#002856';
+    const pallino = (o.reqTruck || o.ldv) ? '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#e74c3c;margin:0 4px;vertical-align:middle;"></span>' : '';
+    const ldvCell = o.ldv ? '<span style="color:#c0392b;font-weight:bold;font-size:10px;">LDV</span>' : '';
+    const adrIcon = o.adr ? '<span title="Merce pericolosa">⚠️</span>' : '';
+    return `<tr id="row-${sid}" style="${rowBg}" data-id="${o.id}" data-traffic="${o.traffic||''}" data-carrier="${o.carrier||''}" data-cont="${o.cont||''}" data-delivery="${o.delivery||''}" data-paired="${isPaired}" data-port="${(o.port||'').toLowerCase()}">
+      <td style="text-align:center;padding:4px;"><input type="checkbox" id="chk-${sid}" onchange="handleCheck('${o.id}','${o.traffic||''}')" style="cursor:pointer;width:14px;height:14px;"></td>
+      <td>${o.traffic||''}${missingBadge}</td>
+      <td style="text-align:center;">${pallino}</td>
+      <td><b>${o.carrier||''}</b></td>
+      <td>${o.cont||''}</td>
+      <td style="text-align:center;">${adrIcon}</td>
+      <td>${o.delivery||''}</td>
+      <td>${o.address||''}</td>
+      <td>${o.port||''}</td>
+      <td style="font-size:10px;color:#555;">${o.contNr||''}</td>
+      <td style="text-align:center;">${rtIcon}</td>
+      <td style="font-size:10px;">${o.branch||''}</td>
+      <td style="font-size:10px;">${o.reqBranch||''}</td>
+      <td style="text-align:center;">${ldvCell}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="doHL('${o.id}')" style="background:${hlBg};color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;">${o.highlighted?'★':'☆'}</button>
+        <button onclick="doDel('${o.id}')" style="background:#c0392b;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;">✕</button>
+      </td>
+      <td style="white-space:nowrap;color:#888;font-size:10px;">${o.created||''}</td>
+    </tr>`;
+  }).join('');
+  updCounter();
+  applyShowOnly();
+}
+
+function updCounter() {
+  const rows = [...document.querySelectorAll('#tbody tr[data-id]')];
+  const visible = rows.filter(r => r.style.display !== 'none').length;
+  document.getElementById('visible-count').textContent = visible + ' di ' + allOrders.length + ' viaggi';
+}
+
+function applyShowOnly() {
+  const carriers = [...document.querySelectorAll('.fs-c:checked')].map(x => x.value);
+  const conts = [...document.querySelectorAll('.fs-co:checked')].map(x => x.value);
+  const traff = [...document.querySelectorAll('.fs-t:checked')].map(x => x.value);
+  const ports = [...document.querySelectorAll('.fs-p:checked')].map(x => x.value);
+  const hlOnly = document.getElementById('fs-hl')?.checked;
+  const noFilter = !carriers.length && !conts.length && !traff.length && !ports.length && !hlOnly;
+  document.querySelectorAll('#tbody tr[data-id]').forEach(r => {
+    if (noFilter) { r.style.display = ''; return; }
+    const okC = !carriers.length || carriers.includes(r.dataset.carrier);
+    const okCo = !conts.length || conts.includes(r.dataset.cont);
+    const okT = !traff.length || traff.includes((r.dataset.traffic||'').toLowerCase());
+    const okP = !ports.length || ports.some(p => (r.dataset.port||'').includes(p));
+    const okHl = !hlOnly || r.style.background.includes('fff3cd');
+    r.style.display = (okC && okCo && okT && okP && okHl) ? '' : 'none';
+  });
+  updCounter();
+}
+
+function cercaViaggi() {
+  const q = document.getElementById('search-viaggi').value.toLowerCase().trim();
+  document.querySelectorAll('#tbody tr[data-id]').forEach(r => {
+    if (!q) { r.style.display = ''; return; }
+    const txt = r.textContent.toLowerCase();
+    r.style.display = txt.includes(q) ? '' : 'none';
+  });
+  updCounter();
+}
+
+function sortBy(col) {
+  if (sortCol === col) { sortAsc = !sortAsc; } else { sortCol = col; sortAsc = true; }
+  const tbody = document.getElementById('tbody');
+  const rows = [...tbody.querySelectorAll('tr[data-id]')];
+  rows.sort((a, b) => {
+    let va, vb;
+    if (col === 'delivery') { va = pd(a.cells[6]?.innerText||''); vb = pd(b.cells[6]?.innerText||''); return sortAsc ? (va||0)-(vb||0) : (vb||0)-(va||0); }
+    if (col === 'created') { va = pdt(a.cells[15]?.innerText||''); vb = pdt(b.cells[15]?.innerText||''); return sortAsc ? va-vb : vb-va; }
+    va = a.cells[col==='traffic'?1:3]?.innerText||''; vb = b.cells[col==='traffic'?1:3]?.innerText||'';
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+  document.querySelectorAll('th.sort').forEach(th => th.textContent = th.textContent.replace(/ [▲▼]$/, ''));
+  const th = document.getElementById('th-' + col);
+  if (th) th.textContent += (sortAsc ? ' ▲' : ' ▼');
+}
+
+// ── SELEZIONE + ABBINAMENTO ──
+function handleCheck(id, traffic) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  const sid = id.replace(/[^a-z0-9]/gi, '_');
+  const chk = document.getElementById('chk-' + sid);
+  if (!chk) return;
+  const t = (traffic || '').toLowerCase();
+  if (t === 'import') {
+    if (selI && selI.id !== id) {
+      const prevSid = selI.id.replace(/[^a-z0-9]/gi, '_');
+      const prevChk = document.getElementById('chk-' + prevSid);
+      if (prevChk) prevChk.checked = false;
+    }
+    selI = chk.checked ? o : null;
+  } else {
+    if (selE && selE.id !== id) {
+      const prevSid = selE.id.replace(/[^a-z0-9]/gi, '_');
+      const prevChk = document.getElementById('chk-' + prevSid);
+      if (prevChk) prevChk.checked = false;
+    }
+    selE = chk.checked ? o : null;
+  }
+  updAbbina();
+  updDim();
+}
+
+function updAbbina() {
+  const btn = document.getElementById('btn-abbina');
+  if (!btn) return;
+  if (selI && selE && selI.carrier === selE.carrier && compat(selI.cont, selE.cont)) {
+    const di = pd(selI.delivery), de = pd(selE.delivery);
+    if (di && de && de < di) {
+      btn.style.display = 'inline-block';
+      btn.style.background = '#c0392b';
+      btn.textContent = '⚠️ Export prima di Import!';
+    } else {
+      btn.style.display = 'inline-block';
+      btn.style.background = '#27ae60';
+      btn.textContent = '🔗 Abbina (' + selI.carrier + ' · ' + selI.cont + ' ↔ ' + selE.cont + ')';
+    }
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function updDim() {
+  const rows = [...document.querySelectorAll('#tbody tr[data-id]')];
+  if (!selI && !selE) {
+    rows.forEach(r => { r.classList.remove('dim'); r.style.display = ''; });
+    applyShowOnly();
+    return;
+  }
+  const ref = selI || selE;
+  const isI = !!selI;
+  const refDate = pd(ref.delivery) || 0;
+  rows.forEach(r => {
+    const id = r.dataset.id || '';
+    if (id === (selI?.id||'') || id === (selE?.id||'')) { r.classList.remove('dim'); r.style.display = ''; return; }
+    const t = (r.dataset.traffic||'').toLowerCase();
+    const carr = r.dataset.carrier || '';
+    const co = r.dataset.cont || '';
+    const del = pd(r.dataset.delivery || '') || 0;
+    const compatDate = isI ? (t === 'export' && del >= refDate) : (t === 'import' && del <= refDate);
+    const compatCont = isI ? compat(ref.cont, co) : compat(co, ref.cont);
+    const ok = carr === ref.carrier && compatCont && compatDate;
+    r.classList.toggle('dim', !ok);
+    r.style.display = ok ? '' : 'none';
+  });
+}
+
+function deseleziona() {
+  selI = null; selE = null;
+  document.querySelectorAll('#tbody input[type="checkbox"]').forEach(c => c.checked = false);
+  updAbbina(); updDim();
+}
+
+async function doAbbina() {
+  if (!selI || !selE) return;
+  const di = pd(selI.delivery), de = pd(selE.delivery);
+  if (di && de && de < di) { alert("La data dell'export non può essere antecedente a quella dell'import."); return; }
+  const pairs = [...allPairs];
+  pairs.push({ imp: selI, exp: selE, at: new Date().toISOString() });
+  try {
+    await apiPost('/pairs', { data: pairs });
+    allPairs = pairs;
+    selI = null; selE = null;
+    document.querySelectorAll('#tbody input[type="checkbox"]').forEach(c => c.checked = false);
+    updAbbina(); renderViaggi(); renderPairs();
+    alert('✅ Riutilizzo abbinato!');
+  } catch(e) {
+    alert('Errore: ' + e.message);
+  }
+}
+
+function doHL(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  o.highlighted = !o.highlighted;
+  const sid = id.replace(/[^a-z0-9]/gi, '_');
+  const row = document.getElementById('row-' + sid);
+  if (row) {
+    row.style.background = o.highlighted ? '#fff3cd' : '';
+    const btn = row.querySelector('button');
+    if (btn) { btn.textContent = o.highlighted ? '★' : '☆'; btn.style.background = o.highlighted ? '#f0a500' : '#002856'; }
+  }
+}
+
+function doDel(id) {
+  allOrders = allOrders.filter(x => x.id !== id);
+  const sid = id.replace(/[^a-z0-9]/gi, '_');
+  const r = document.getElementById('row-' + sid);
+  if (r) r.remove();
+  document.getElementById('cnt-viaggi').textContent = allOrders.length;
+  updCounter();
+}
+
+function clearAll() {
+  if (!confirm('Eliminare tutti i viaggi dalla lista?')) return;
+  allOrders = [];
+  renderViaggi();
 }
 
 // ── RENDER PAIRS ──
@@ -273,7 +565,8 @@ function renderPairs() {
   const html = Object.keys(groups)
     .sort((a,b) => (pd(groups[a][0].imp.delivery)||0) - (pd(groups[b][0].imp.delivery)||0))
     .map(k => {
-      const rows = groups[k].map((p, idx) => {
+      const rows = groups[k].map(p => {
+        const i = allPairs.indexOf(p);
         const carr = (p.imp && p.imp.carrier) || '';
         const pal = PAL[carr] || ['#aabbdd'];
         cc[carr] = (cc[carr] || 0);
@@ -287,15 +580,20 @@ function renderPairs() {
           <span class="f"><b>${p.imp.address||''}</b></span>
           <span class="f">${p.imp.delivery||''}</span>
           <span class="f">${p.imp.port||''}</span>
-          <span class="f dim">LEF: ${p.imp.reqBranch||'—'}</span>
+          <span class="f dim-txt">LEF: ${p.imp.reqBranch||'—'}</span>
           <span class="sep">↕</span>${tappa}
           <span class="tag exp">📤 EXP</span>
           <span class="tag">${p.exp.carrier||''}</span><span class="tag">${p.exp.cont||''}</span>
           <span class="f"><b>${p.exp.address||''}</b></span>
           <span class="f">${p.exp.delivery||''}</span>
           <span class="f">${p.exp.port||''}</span>
-          <span class="f dim">LEF: ${p.exp.reqBranch||'—'}</span>
-          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">${kmBadge}<button class="cbtn" onclick="cpPair(${allPairs.indexOf(p)})">📋 Copia</button></div>
+          <span class="f dim-txt">LEF: ${p.exp.reqBranch||'—'}</span>
+          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">
+            ${kmBadge}
+            <button class="cbtn" onclick="apriKm(${i})" style="background:#27ae60;">✏️ km</button>
+            <button class="cbtn" onclick="cpPair(${i})">📋 Copia</button>
+            <button class="dbtn" onclick="rmPair(${i})">✕</button>
+          </div>
         </div>`;
       }).join('');
       return `<div class="sec-title">📅 Import del ${k}</div>${rows}`;
@@ -309,6 +607,23 @@ function cpPair(i) {
   navigator.clipboard.writeText(t).catch(()=>{});
 }
 
+async function rmPair(i) {
+  if (!confirm('Eliminare questo riutilizzo?')) return;
+  allPairs.splice(i, 1);
+  await apiPost('/pairs', { data: allPairs });
+  renderPairs(); renderViaggi();
+}
+
+function apriKm(i) {
+  const p = allPairs[i]; if (!p) return;
+  const km = prompt('Km per questo riutilizzo:', p.km || '');
+  if (km === null) return;
+  const n = parseInt(km);
+  if (isNaN(n) || n < 0) { alert('Inserisci un numero valido.'); return; }
+  allPairs[i].km = n;
+  apiPost('/pairs', { data: allPairs }).then(() => renderPairs()).catch(e => alert('Errore: ' + e.message));
+}
+
 // ── RENDER TRATTE ──
 function renderTratte(filtro) {
   const content = document.getElementById('tratte-content');
@@ -318,7 +633,7 @@ function renderTratte(filtro) {
     (t.carico||'').toLowerCase().includes(q) ||
     (t.portoImp||'').toLowerCase().includes(q) ||
     (t.portoExp||'').toLowerCase().includes(q) ||
-    String(t.km).includes(q)
+    String(t.km||'').includes(q)
   ) : allTratte;
   document.getElementById('cnt-tratte').textContent = allTratte.length;
   document.getElementById('lbl-tratte-count').textContent = filtered.length + ' di ' + allTratte.length + ' tratte';
@@ -328,7 +643,7 @@ function renderTratte(filtro) {
   }
   content.innerHTML = filtered.map((t, idx) => `
     <div class="tratta-row">
-      <span class="porto">${t.portoImp||''}</span>
+      <span style="font-size:10px;color:#888;">${t.portoImp||''}</span>
       <span style="color:#888;">→</span>
       <span style="background:#e8f0fa;color:#002856;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:bold;">I</span>
       <b style="color:#002856;">${t.scarico||''}</b>
@@ -336,21 +651,26 @@ function renderTratte(filtro) {
       <b style="color:#1a5c1a;">${t.carico||''}</b>
       <span style="background:#e8f4ee;color:#1a5c1a;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:bold;">E</span>
       <span style="color:#888;">→</span>
-      <span class="porto">${t.portoExp||''}</span>
+      <span style="font-size:10px;color:#888;">${t.portoExp||''}</span>
       ${t.tappa ? `<span class="tratta-tappa">(ferma ${t.tappa})</span>` : ''}
-      <span class="tratta-km">${t.km} km</span>
+      <span class="tratta-km">${t.km||0} km</span>
+      <button onclick="delTratta('${(t.id||'').replace(/'/g,"\\'")}')" style="background:#a93226;color:white;border:none;border-radius:3px;padding:2px 8px;cursor:pointer;font-size:10px;margin-left:8px;">✕</button>
     </div>
   `).join('');
 }
 
-function filtraTratte(q) {
-  renderTratte(q);
+function filtraTratte(q) { renderTratte(q); }
+
+async function delTratta(id) {
+  if (!confirm('Eliminare questa tratta?')) return;
+  allTratte = allTratte.filter(t => t.id !== id);
+  await apiPost('/tratte', { data: allTratte });
+  renderTratte(document.getElementById('tratte-search').value);
 }
 
-// ── RENDER TARIFFARIO ──
+// ── TARIFFARIO ──
 function renderTariffario() {
   const fuel = parseFloat(document.getElementById('tar-fuel').value) || 0;
-  const tbody = document.getElementById('tar-body');
   const jumpKm = parseInt(document.getElementById('tar-jump-km').value) || 0;
   let html = '';
   for (let km = 100; km <= 1500; km++) {
@@ -366,7 +686,7 @@ function renderTariffario() {
       <td class="tar-finale">${f40 ? '€ '+f40 : '—'}</td>
     </tr>`;
   }
-  tbody.innerHTML = html;
+  document.getElementById('tar-body').innerHTML = html;
 }
 
 function tarUpdate(input) {
@@ -376,7 +696,6 @@ function tarUpdate(input) {
   let r = tariffario.find(x => x.km === km);
   if (!r) { r = { km, c20: 0, c40: 0 }; tariffario.push(r); }
   r[tipo] = val;
-  // Aggiorna solo la cella finale senza re-render completo
   const fuel = parseFloat(document.getElementById('tar-fuel').value) || 0;
   const finale = val ? Math.round(val * (1 + fuel/100)) : '—';
   const row = document.getElementById('tar-row-' + km);
@@ -389,7 +708,7 @@ function tarUpdate(input) {
 
 function jumpToKm() {
   const km = parseInt(document.getElementById('tar-jump-km').value);
-  if (!km || km < 100 || km > 1500) return;
+  if (!km) return;
   document.querySelectorAll('.tar-highlight').forEach(r => r.classList.remove('tar-highlight'));
   const row = document.getElementById('tar-row-' + km);
   if (row) { row.classList.add('tar-highlight'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
@@ -400,9 +719,7 @@ async function saveTariffario() {
   try {
     await apiPost('/tariffario', { tariffario: dati });
     alert('Tariffario salvato (' + dati.length + ' righe).');
-  } catch(e) {
-    alert('Errore salvataggio: ' + e.message);
-  }
+  } catch(e) { alert('Errore: ' + e.message); }
 }
 
 function importCSV(input) {
@@ -410,20 +727,19 @@ function importCSV(input) {
   const reader = new FileReader();
   reader.onload = function(e) {
     const lines = e.target.result.split('\n');
-    let importati = 0;
     tariffario = [];
+    let n = 0;
     lines.forEach(line => {
       const cols = line.split(';');
       if (cols.length < 3) return;
-      const km  = parseInt(cols[0]);
-      const c20 = parseFloat(cols[1].replace(',', '.')) || 0;
-      const c40 = parseFloat(cols[2].replace(',', '.')) || 0;
+      const km = parseInt(cols[0]);
+      const c20 = parseFloat(cols[1].replace(',','.')) || 0;
+      const c40 = parseFloat(cols[2].replace(',','.')) || 0;
       if (!km || km < 100 || km > 1500) return;
-      tariffario.push({ km, c20, c40 });
-      importati++;
+      tariffario.push({ km, c20, c40 }); n++;
     });
     renderTariffario();
-    alert('CSV importato: ' + importati + ' righe. Clicca "Salva tariffario" per confermare.');
+    alert('CSV importato: ' + n + ' righe. Clicca "Salva" per confermare.');
   };
   reader.readAsText(file);
 }
