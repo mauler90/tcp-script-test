@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Migrazione S.R.C.</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; background: #1a1a2e; color: #eee; }
+  h2 { color: #5dfc82; }
+  button { background: #1a65b8; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 6px 4px; }
+  button:hover { background: #2a75c8; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  #log { background: #0d1117; border: 1px solid #333; border-radius: 6px; padding: 14px; margin-top: 18px; font-family: monospace; font-size: 12px; min-height: 200px; white-space: pre-wrap; }
+  .ok { color: #5dfc82; }
+  .err { color: #ff6b6b; }
+  .info { color: #bdf3fc; }
+  input { background: #0d1117; border: 1px solid #555; border-radius: 4px; padding: 6px 10px; color: #eee; font-size: 13px; width: 100%; box-sizing: border-box; margin-top: 4px; }
+  label { font-size: 12px; color: #aaa; display: block; margin-top: 12px; }
+</style>
+</head>
+<body>
+<h2>Migrazione S.R.C. → Supabase</h2>
+<p style="font-size:13px;color:#aaa;">Questo script legge i dati dal Gist GitHub e li carica sul database Supabase.</p>
+
+<label>Token GitHub (per leggere il Gist)</label>
+<input id="gh-token" type="password" placeholder="github_pat_...">
+
+<label>Gist ID</label>
+<input id="gist-id" value="486d0c474acacd810696b6f28542681f">
+
+<label>Token sessione Supabase (incolla dopo il login)</label>
+<input id="sb-token" type="password" placeholder="eyJ...">
+
+<label>API Base URL</label>
+<input id="api-url" value="https://riutilizzi.netlify.app/.netlify/functions/api">
+
+<div style="margin-top:16px;">
+  <button onclick="leggiGist()">1. Leggi Gist</button>
+  <button id="btn-migra" onclick="migraDB()" disabled>2. Migra su Supabase</button>
+</div>
+
+<div id="log">In attesa...</div>
+
+<script>
+let gistData = null;
+
+function log(msg, tipo) {
+  const el = document.getElementById('log');
+  const cls = tipo || 'info';
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('log').innerHTML = '';
+}
+
+async function leggiGist() {
+  clearLog();
+  const token = document.getElementById('gh-token').value.trim();
+  const gistId = document.getElementById('gist-id').value.trim();
+  if (!token) { log('Inserisci il token GitHub.', 'err'); return; }
+
+  log('Lettura Gist in corso...', 'info');
+  try {
+    const r = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await r.json();
+    if (!data.files) { log('Gist non trovato o vuoto.', 'err'); return; }
+
+    gistData = {};
+    const files = ['tcp_pairs.json', 'tcp_tratte.json', 'tcp_alias.json', 'tcp_tappe.json'];
+    for (const f of files) {
+      if (data.files[f]) {
+        gistData[f] = JSON.parse(data.files[f].content);
+        const key = f.replace('tcp_', '').replace('.json', '');
+        const count = gistData[f][key] ? gistData[f][key].length : (gistData[f].tappe ? gistData[f].tappe.length : 0);
+        log(`✓ ${f}: ${count} elementi trovati`, 'ok');
+      } else {
+        log(`- ${f}: non presente nel Gist`, 'info');
+      }
+    }
+    log('\nDati letti. Inserisci il token Supabase e clicca "Migra su Supabase".', 'info');
+    document.getElementById('btn-migra').disabled = false;
+  } catch(e) {
+    log('Errore: ' + e.message, 'err');
+  }
+}
+
+async function apiPost(endpoint, body, token, apiUrl) {
+  const r = await fetch(`${apiUrl}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+async function migraDB() {
+  const sbToken = document.getElementById('sb-token').value.trim();
+  const apiUrl = document.getElementById('api-url').value.trim();
+  if (!sbToken) { log('Inserisci il token sessione Supabase.', 'err'); return; }
+  if (!gistData) { log('Prima leggi il Gist.', 'err'); return; }
+
+  log('\nMigrazione in corso...', 'info');
+
+  try {
+    // Pairs
+    if (gistData['tcp_pairs.json'] && gistData['tcp_pairs.json'].pairs) {
+      const pairs = gistData['tcp_pairs.json'].pairs;
+      const r = await apiPost('/pairs', { data: pairs }, sbToken, apiUrl);
+      if (r.ok) log(`✓ Pairs migrati: ${pairs.length} riutilizzi`, 'ok');
+      else log('✗ Errore pairs: ' + JSON.stringify(r), 'err');
+    }
+
+    // Tratte
+    if (gistData['tcp_tratte.json'] && gistData['tcp_tratte.json'].tratte) {
+      const tratte = gistData['tcp_tratte.json'].tratte;
+      const r = await apiPost('/tratte', { data: tratte }, sbToken, apiUrl);
+      if (r.ok) log(`✓ Tratte migrate: ${tratte.length} tratte`, 'ok');
+      else log('✗ Errore tratte: ' + JSON.stringify(r), 'err');
+    }
+
+    // Alias
+    if (gistData['tcp_alias.json'] && gistData['tcp_alias.json'].alias) {
+      const alias = gistData['tcp_alias.json'].alias;
+      const r = await apiPost('/alias', { data: alias }, sbToken, apiUrl);
+      if (r.ok) log(`✓ Alias migrati: ${alias.length} alias`, 'ok');
+      else log('✗ Errore alias: ' + JSON.stringify(r), 'err');
+    }
+
+    // Tappe
+    if (gistData['tcp_tappe.json'] && gistData['tcp_tappe.json'].tappe) {
+      const tappe = gistData['tcp_tappe.json'].tappe;
+      const r = await apiPost('/tappe', { tappe }, sbToken, apiUrl);
+      if (r.ok) log(`✓ Tappe migrate: ${tappe.length} tappe`, 'ok');
+      else log('✗ Errore tappe: ' + JSON.stringify(r), 'err');
+    }
+
+    log('\n✓ Migrazione completata!', 'ok');
+  } catch(e) {
+    log('Errore: ' + e.message, 'err');
+  }
+}
+</script>
+</body>
+</html>
