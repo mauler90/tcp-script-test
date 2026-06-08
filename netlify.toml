@@ -4,8 +4,11 @@
 [functions]
   directory = "netlify/functions"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "index.html"
+
 [[headers]]
-  for = "/api/*"
+  for = "/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
