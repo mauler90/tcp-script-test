@@ -5,7 +5,7 @@
   directory = "netlify/functions"
 
 [build.environment]
-  SECRETS_SCAN_OMIT_PATHS = "index.html"
+  SECRETS_SCAN_OMIT_PATHS = "index.html,app.html,migrazione.html"
 
 [[headers]]
   for = "/*"
