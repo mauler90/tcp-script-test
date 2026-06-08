@@ -8,47 +8,63 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5ff;min-height:100vh;display:flex;flex-direction:column;}
-/* TOPBAR */
 .topbar{background:#002856;color:white;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
 .topbar h2{font-size:15px;font-weight:bold;letter-spacing:1px;}
 .meta{margin-left:auto;font-size:11px;color:#bdf3fc;display:flex;align-items:center;gap:12px;}
 .btn-logout{background:none;border:1px solid #bdf3fc;color:#bdf3fc;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;}
 .btn-logout:hover{background:#bdf3fc;color:#002856;}
-/* TABBAR */
-.tabbar{display:flex;background:#e0eaf8;border-bottom:2px solid #002856;flex-shrink:0;align-items:center;padding-right:6px;}
-.tb{padding:9px 22px;cursor:pointer;font-weight:bold;font-size:12px;color:#002856;border:none;background:none;border-bottom:3px solid transparent;}
-.tb.on{border-bottom:3px solid #e74c3c;background:white;}
-.tb:hover:not(.on){background:#d0daf0;}
-/* CONTENUTO TAB */
-.tc{display:none;padding:14px 18px;overflow-y:auto;flex:1;}
-.tc.on{display:block;}
-/* PAIRS */
-.pr{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 10px;margin-bottom:6px;border-radius:5px;font-size:11px;}
-.tag{border-radius:3px;padding:2px 6px;font-size:10px;font-weight:bold;background:#002856;color:white;}
-.tag.imp{background:#1a65b8;}
-.tag.exp{background:#27ae60;}
-.f{padding:1px 4px;}
-.f b{font-weight:bold;}
-.dim{color:#888;}
-.sep{color:#888;font-weight:bold;padding:0 4px;}
-.sec-title{font-size:12px;font-weight:bold;color:#002856;background:#d0daf0;padding:5px 12px;border-radius:4px;margin:10px 0 5px;}
-.cbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#002856;color:white;margin-left:2px;}
-.dbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#c0392b;color:white;margin-left:2px;}
-/* SYNC BAR */
 .syncbar{background:#fff8e1;border-bottom:1px solid #f0c040;padding:5px 18px;font-size:11px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.syncbar .dot{width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;}
+.syncbar .dot{width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;flex-shrink:0;}
 .syncbar .dot.err{background:#e74c3c;}
 .syncbar .dot.loading{background:#f0a500;animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-/* PLACEHOLDER TAB */
-.placeholder{text-align:center;padding:60px 20px;color:#aaa;}
-.placeholder h3{font-size:18px;margin-bottom:8px;}
-.placeholder p{font-size:13px;}
-/* LOADING */
-#loading{text-align:center;padding:40px;color:#888;font-size:13px;}
-/* AZIONI PAIRS */
+.tabbar{display:flex;background:#e0eaf8;border-bottom:2px solid #002856;flex-shrink:0;align-items:center;padding-right:6px;flex-wrap:wrap;}
+.tb{padding:9px 18px;cursor:pointer;font-weight:bold;font-size:12px;color:#002856;border:none;background:none;border-bottom:3px solid transparent;}
+.tb.on{border-bottom:3px solid #e74c3c;background:white;}
+.tb:hover:not(.on){background:#d0daf0;}
+.tc{display:none;padding:14px 18px;overflow-y:auto;flex:1;}
+.tc.on{display:block;}
+/* PAIRS */
+.pr{display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:8px 10px;margin-bottom:5px;border-radius:5px;font-size:11px;}
+.tag{border-radius:3px;padding:2px 6px;font-size:10px;font-weight:bold;background:#002856;color:white;}
+.tag.imp{background:#1a65b8;}
+.tag.exp{background:#27ae60;}
+.f{padding:1px 3px;}
+.dim{color:#888;}
+.sep{color:#888;font-weight:bold;padding:0 3px;}
+.sec-title{font-size:12px;font-weight:bold;color:#002856;background:#d0daf0;padding:5px 12px;border-radius:4px;margin:10px 0 5px;}
+.cbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#002856;color:white;margin-left:2px;}
+.dbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#c0392b;color:white;margin-left:2px;}
 .pairs-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
 .pairs-actions button{color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;}
+/* TRATTE */
+.tratte-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.tratte-toolbar input{flex:1;min-width:180px;border:1px solid #aac4e0;border-radius:4px;padding:5px 10px;font-size:11px;}
+.tratta-row{display:flex;align-items:center;background:white;border:1px solid #d0dff0;border-radius:4px;margin-bottom:4px;padding:5px 10px;font-size:12px;gap:6px;flex-wrap:wrap;}
+.tratta-row:nth-child(even){background:#f8fbff;}
+.porto{font-size:10px;color:#888;}
+.tratta-km{font-weight:bold;color:#002856;margin-left:auto;white-space:nowrap;}
+.tratta-tappa{color:#1a7a1a;font-weight:bold;font-size:11px;}
+/* TARIFFARIO */
+.tar-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.tar-toolbar input[type=number]{width:80px;border:1px solid #aac4e0;border-radius:4px;padding:5px 8px;font-size:12px;}
+.tar-toolbar label{font-size:12px;color:#555;}
+.tar-jump{display:flex;gap:6px;align-items:center;}
+.tar-table{border-collapse:collapse;font-size:12px;min-width:380px;}
+.tar-table thead th{background:#002856;color:white;padding:7px 12px;text-align:right;white-space:nowrap;}
+.tar-table thead th:first-child{text-align:left;}
+.tar-table tbody tr:nth-child(even){background:#f8fbff;}
+.tar-table tbody td{padding:3px 12px;border-bottom:1px solid #e8eef8;}
+.tar-table tbody td:first-child{font-weight:bold;color:#002856;white-space:nowrap;}
+.tar-finale{color:#1a5c1a;font-weight:bold;text-align:right;}
+.tar-grezzo{text-align:right;color:#555;}
+.tar-highlight{background:#fff3cd !important;}
+/* IMPORT CSV */
+.csv-zone{border:2px dashed #aac4e0;border-radius:8px;padding:20px;text-align:center;margin-bottom:16px;cursor:pointer;color:#555;font-size:12px;}
+.csv-zone:hover{background:#f0f5ff;}
+/* PLACEHOLDER */
+.placeholder{text-align:center;padding:60px 20px;color:#aaa;}
+.placeholder h3{font-size:18px;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -57,7 +73,6 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
   <h2>🔗 S.R.C. — Script Riutilizzo Container</h2>
   <div class="meta">
     <span id="lbl-utente"></span>
-    <span id="lbl-sync"></span>
     <button class="btn-logout" onclick="doLogout()">Esci</button>
   </div>
 </div>
@@ -72,7 +87,7 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 <div class="tabbar">
   <button class="tb on" data-t="pairs" onclick="showTab('pairs')">🔗 Riutilizzi (<span id="cnt-pairs">0</span>)</button>
   <button class="tb" data-t="viaggi" onclick="showTab('viaggi')">🚛 Viaggi</button>
-  <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
+  <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte (<span id="cnt-tratte">0</span>)</button>
   <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💶 Tariffario</button>
   <button class="tb" data-t="report" onclick="showTab('report')">📊 Report</button>
 </div>
@@ -83,7 +98,7 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
     <button onclick="syncAll()" style="background:#1a65b8;">↺ Ricarica</button>
     <span style="color:#888;font-size:11px;" id="lbl-pairs-count"></span>
   </div>
-  <div id="pairs-content"><div id="loading">Caricamento riutilizzi...</div></div>
+  <div id="pairs-content"><div style="text-align:center;padding:40px;color:#888;">Caricamento...</div></div>
 </div>
 
 <!-- TAB VIAGGI -->
@@ -97,17 +112,39 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 
 <!-- TAB TRATTE -->
 <div class="tc" id="t-tratte">
-  <div class="placeholder">
-    <h3>🗺️ Tratte</h3>
-    <p>In arrivo nella prossima versione.</p>
+  <div class="tratte-toolbar">
+    <input type="text" id="tratte-search" placeholder="Filtra per città, porto, km..." oninput="filtraTratte(this.value)">
+    <button onclick="filtraTratte('');document.getElementById('tratte-search').value='';" style="background:#888;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">✕ Reset</button>
+    <span style="color:#888;font-size:11px;" id="lbl-tratte-count"></span>
   </div>
+  <div id="tratte-content"><div style="text-align:center;padding:40px;color:#888;">Caricamento...</div></div>
 </div>
 
 <!-- TAB TARIFFARIO -->
 <div class="tc" id="t-tariffario">
-  <div class="placeholder">
-    <h3>💶 Tariffario</h3>
-    <p>In arrivo nella prossima versione.</p>
+  <div class="tar-toolbar">
+    <label>Fuel surcharge: <input type="number" id="tar-fuel" value="0" min="0" max="100" step="0.5" oninput="renderTariffario()"> %</label>
+    <div class="tar-jump">
+      <label>Vai a km: <input type="number" id="tar-jump-km" min="100" max="1500" step="1" placeholder="es. 350"></label>
+      <button onclick="jumpToKm()" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">Vai</button>
+    </div>
+    <div class="csv-zone" onclick="document.getElementById('csv-input').click()">
+      📂 Clicca per importare tariffario CSV
+      <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="importCSV(this)">
+    </div>
+    <button onclick="saveTariffario()" style="background:#27ae60;color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;">💾 Salva tariffario</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="tar-table" id="tar-table">
+      <thead><tr>
+        <th style="text-align:left;">Km</th>
+        <th>Grezzo 20'</th>
+        <th>Finale 20'</th>
+        <th>Grezzo 40'/40HC</th>
+        <th>Finale 40'/40HC</th>
+      </tr></thead>
+      <tbody id="tar-body"></tbody>
+    </table>
   </div>
 </div>
 
@@ -123,7 +160,6 @@ body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5f
 const SUPABASE_URL = 'https://rdjldluwqijjahnqqdur.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkamxkbHV3cWlqamFobnFxZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDcyMjYsImV4cCI6MjA5NjIyMzIyNn0.TzOGtBntu8aRuGn3bG2KoRg6i_Z_uHsuz1T45tAhon4';
 const API = 'https://riutilizzi.netlify.app/.netlify/functions/api';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const PAL = {
@@ -134,23 +170,19 @@ const PAL = {
 };
 
 let token = localStorage.getItem('src_token');
-let allPairs = [];
+let allPairs = [], allTratte = [], tariffario = [];
 
-// ── AUTH CHECK ──
+// ── AUTH ──
 async function checkAuth() {
   if (!token) { window.location.href = '/index.html'; return; }
   const { data, error } = await sb.auth.getUser(token);
   if (error || !data.user) {
-    // Prova a refreshare la sessione
     const { data: s2 } = await sb.auth.getSession();
     if (s2.session) {
       token = s2.session.access_token;
       localStorage.setItem('src_token', token);
       document.getElementById('lbl-utente').textContent = s2.session.user.email;
-    } else {
-      window.location.href = '/index.html';
-      return;
-    }
+    } else { window.location.href = '/index.html'; return; }
   } else {
     document.getElementById('lbl-utente').textContent = data.user.email;
   }
@@ -162,10 +194,17 @@ function showTab(name) {
   document.querySelectorAll('.tc').forEach(c => c.classList.toggle('on', c.id === 't-' + name));
 }
 
-// ── API CALL ──
+// ── API ──
 async function apiGet(endpoint) {
+  const r = await fetch(API + endpoint, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (!r.ok) throw new Error('API error ' + r.status);
+  return r.json();
+}
+async function apiPost(endpoint, body) {
   const r = await fetch(API + endpoint, {
-    headers: { 'Authorization': 'Bearer ' + token }
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    body: JSON.stringify(body)
   });
   if (!r.ok) throw new Error('API error ' + r.status);
   return r.json();
@@ -175,121 +214,218 @@ async function apiGet(endpoint) {
 async function syncAll() {
   setSyncStatus('loading', 'Sincronizzazione...');
   try {
-    const data = await apiGet('/pairs');
-    // data è array di righe DB, ogni riga ha .data che contiene l'array dei pairs
-    if (data && data.length > 0) {
-      allPairs = data[0].data || [];
-    } else {
-      allPairs = [];
-    }
+    const [pairsRes, tratteRes, tarRes] = await Promise.all([
+      apiGet('/pairs'),
+      apiGet('/tratte'),
+      apiGet('/tariffario')
+    ]);
+    allPairs  = (pairsRes  && pairsRes.length)  ? (pairsRes[0].data  || []) : [];
+    allTratte = (tratteRes && tratteRes.length)  ? (tratteRes[0].data || []) : [];
+    tariffario = tarRes || [];
     renderPairs();
+    renderTratte('');
+    renderTariffario();
     setSyncStatus('ok', 'Sincronizzato');
-    document.getElementById('lbl-last-sync').textContent = 'Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT');
+    document.getElementById('lbl-last-sync').textContent = 'Aggiornato: ' + new Date().toLocaleTimeString('it-IT');
   } catch(e) {
     setSyncStatus('err', 'Errore connessione');
-    document.getElementById('pairs-content').innerHTML = '<div style="color:#c0392b;padding:20px;text-align:center;">Errore nel caricamento dati.<br><small>' + e.message + '</small></div>';
   }
 }
 
 function setSyncStatus(stato, msg) {
   const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-msg');
   dot.className = 'dot' + (stato === 'err' ? ' err' : stato === 'loading' ? ' loading' : '');
-  lbl.textContent = msg;
+  document.getElementById('sync-msg').textContent = msg;
 }
 
-// ── RENDER PAIRS ──
+// ── UTILITY DATE ──
 function pd(str) {
   if (!str) return null;
   const m = str.match(/(\d{2})\/(\d{2})\/(\d{2})/);
   if (!m) return null;
   return new Date('20' + m[3] + '-' + m[2] + '-' + m[1]);
 }
-
-function monday(offset) {
-  const d = new Date();
-  d.setHours(0,0,0,0);
+function monday() {
+  const d = new Date(); d.setHours(0,0,0,0);
   const day = d.getDay() || 7;
-  d.setDate(d.getDate() - day + 1 + offset * 7);
+  d.setDate(d.getDate() - day + 1);
   return d;
 }
 
+// ── RENDER PAIRS ──
 function renderPairs() {
   const content = document.getElementById('pairs-content');
-  const monStart = monday(0);
-
-  const pairs = allPairs.filter(p => {
-    const de = pd(p.exp && p.exp.delivery);
-    return !de || de >= monStart;
-  });
-
+  const monStart = monday();
+  const pairs = allPairs.filter(p => { const de = pd(p.exp && p.exp.delivery); return !de || de >= monStart; });
   const hidden = allPairs.length - pairs.length;
-
   document.getElementById('cnt-pairs').textContent = pairs.length;
-  document.getElementById('lbl-pairs-count').textContent =
-    pairs.length + ' attivi' + (hidden ? ' · ' + hidden + ' precedenti nascosti' : '');
-
+  document.getElementById('lbl-pairs-count').textContent = pairs.length + ' attivi' + (hidden ? ' · ' + hidden + ' precedenti nascosti' : '');
   if (!pairs.length) {
-    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun riutilizzo attivo.</p>' +
-      (hidden ? '<p style="color:#aaa;font-size:11px;text-align:center;">' + hidden + ' riutilizzi precedenti nascosti</p>' : '');
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:40px;">Nessun riutilizzo attivo.</p>';
     return;
   }
-
-  // Raggruppa per data import
   const groups = {};
-  pairs.forEach((p, i) => {
-    const k = (p.imp && p.imp.delivery) ? p.imp.delivery.substring(0, 8) : '?';
-    (groups[k] = groups[k] || []).push({ p, i: allPairs.indexOf(p) });
+  pairs.forEach(p => {
+    const k = (p.imp && p.imp.delivery) ? p.imp.delivery.substring(0,8) : '?';
+    (groups[k] = groups[k] || []).push(p);
   });
-
   const cc = {};
   const html = Object.keys(groups)
-    .sort((a, b) => (pd(groups[a][0].p.imp.delivery) || 0) - (pd(groups[b][0].p.imp.delivery) || 0))
+    .sort((a,b) => (pd(groups[a][0].imp.delivery)||0) - (pd(groups[b][0].imp.delivery)||0))
     .map(k => {
-      const dateLabel = k;
-      const rows = groups[k].map(({ p, i }) => {
+      const rows = groups[k].map((p, idx) => {
         const carr = (p.imp && p.imp.carrier) || '';
         const pal = PAL[carr] || ['#aabbdd'];
         cc[carr] = (cc[carr] || 0);
         const bg = pal[cc[carr]++ % pal.length];
-        const tappa = p.tappa
-          ? `<span style="background:#1a7a1a;color:white;border-radius:4px;font-size:10px;font-weight:bold;padding:2px 7px;margin:0 2px;">⚑ via ${p.tappa}</span>`
-          : '';
+        const tappa = p.tappa ? `<span style="background:#1a7a1a;color:white;border-radius:4px;font-size:10px;font-weight:bold;padding:2px 7px;">⚑ via ${p.tappa}</span>` : '';
+        const kmBadge = p.km ? `<span style="background:#002856;color:#bdf3fc;border-radius:3px;padding:2px 7px;font-size:10px;font-weight:bold;">${p.km} km</span>` : '';
         return `<div class="pr" style="border-left:4px solid ${bg};background:${bg}22;">
           <span class="tag imp">📥 IMP</span>
-          <span class="tag">${p.imp.carrier || ''}</span>
-          <span class="tag">${p.imp.cont || ''}</span>
-          <span class="f">${p.imp.contNr || '—'}</span>
-          <span class="f"><b>${p.imp.address || ''}</b></span>
-          <span class="f">${p.imp.delivery || ''}</span>
-          <span class="f">${p.imp.port || ''}</span>
-          <span class="f dim">LEF: ${p.imp.reqBranch || '—'}</span>
-          <span class="sep">↕</span>
-          ${tappa}
+          <span class="tag">${p.imp.carrier||''}</span><span class="tag">${p.imp.cont||''}</span>
+          <span class="f">${p.imp.contNr||'—'}</span>
+          <span class="f"><b>${p.imp.address||''}</b></span>
+          <span class="f">${p.imp.delivery||''}</span>
+          <span class="f">${p.imp.port||''}</span>
+          <span class="f dim">LEF: ${p.imp.reqBranch||'—'}</span>
+          <span class="sep">↕</span>${tappa}
           <span class="tag exp">📤 EXP</span>
-          <span class="tag">${p.exp.carrier || ''}</span>
-          <span class="tag">${p.exp.cont || ''}</span>
-          <span class="f"><b>${p.exp.address || ''}</b></span>
-          <span class="f">${p.exp.delivery || ''}</span>
-          <span class="f">${p.exp.port || ''}</span>
-          <span class="f dim">LEF: ${p.exp.reqBranch || '—'}</span>
-          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">
-            <button class="cbtn" onclick="cpPair(${i})">📋 Copia</button>
-          </div>
+          <span class="tag">${p.exp.carrier||''}</span><span class="tag">${p.exp.cont||''}</span>
+          <span class="f"><b>${p.exp.address||''}</b></span>
+          <span class="f">${p.exp.delivery||''}</span>
+          <span class="f">${p.exp.port||''}</span>
+          <span class="f dim">LEF: ${p.exp.reqBranch||'—'}</span>
+          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">${kmBadge}<button class="cbtn" onclick="cpPair(${allPairs.indexOf(p)})">📋 Copia</button></div>
         </div>`;
       }).join('');
-      return `<div class="sec-title">📅 Import del ${dateLabel}</div>${rows}`;
+      return `<div class="sec-title">📅 Import del ${k}</div>${rows}`;
     }).join('');
-
   content.innerHTML = html;
 }
 
-// ── COPIA PAIR ──
 function cpPair(i) {
-  const p = allPairs[i];
-  if (!p) return;
-  const t = '📥 IMPORT | ' + p.imp.carrier + ' | ' + p.imp.cont + ' | ' + (p.imp.contNr || '—') + ' | ' + p.imp.address + ' | ' + p.imp.delivery + ' | ' + p.imp.port + ' | LEF: ' + (p.imp.reqBranch || '—') + '\n↕ Riutilizza con\n📤 EXPORT | ' + p.exp.carrier + ' | ' + p.exp.cont + ' | ' + (p.exp.contNr || '—') + ' | ' + p.exp.address + ' | ' + p.exp.delivery + ' | ' + p.exp.port + ' | LEF: ' + (p.exp.reqBranch || '—');
-  navigator.clipboard.writeText(t).catch(() => {});
+  const p = allPairs[i]; if (!p) return;
+  const t = '📥 IMPORT | '+p.imp.carrier+' | '+p.imp.cont+' | '+(p.imp.contNr||'—')+' | '+p.imp.address+' | '+p.imp.delivery+' | '+p.imp.port+' | LEF: '+(p.imp.reqBranch||'—')+'\n↕ Riutilizza con\n📤 EXPORT | '+p.exp.carrier+' | '+p.exp.cont+' | '+(p.exp.contNr||'—')+' | '+p.exp.address+' | '+p.exp.delivery+' | '+p.exp.port+' | LEF: '+(p.exp.reqBranch||'—');
+  navigator.clipboard.writeText(t).catch(()=>{});
+}
+
+// ── RENDER TRATTE ──
+function renderTratte(filtro) {
+  const content = document.getElementById('tratte-content');
+  const q = (filtro || '').toLowerCase().trim();
+  const filtered = q ? allTratte.filter(t =>
+    (t.scarico||'').toLowerCase().includes(q) ||
+    (t.carico||'').toLowerCase().includes(q) ||
+    (t.portoImp||'').toLowerCase().includes(q) ||
+    (t.portoExp||'').toLowerCase().includes(q) ||
+    String(t.km).includes(q)
+  ) : allTratte;
+  document.getElementById('cnt-tratte').textContent = allTratte.length;
+  document.getElementById('lbl-tratte-count').textContent = filtered.length + ' di ' + allTratte.length + ' tratte';
+  if (!filtered.length) {
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:30px;">Nessuna tratta trovata.</p>';
+    return;
+  }
+  content.innerHTML = filtered.map((t, idx) => `
+    <div class="tratta-row">
+      <span class="porto">${t.portoImp||''}</span>
+      <span style="color:#888;">→</span>
+      <span style="background:#e8f0fa;color:#002856;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:bold;">I</span>
+      <b style="color:#002856;">${t.scarico||''}</b>
+      <span style="color:#888;">↕</span>
+      <b style="color:#1a5c1a;">${t.carico||''}</b>
+      <span style="background:#e8f4ee;color:#1a5c1a;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:bold;">E</span>
+      <span style="color:#888;">→</span>
+      <span class="porto">${t.portoExp||''}</span>
+      ${t.tappa ? `<span class="tratta-tappa">(ferma ${t.tappa})</span>` : ''}
+      <span class="tratta-km">${t.km} km</span>
+    </div>
+  `).join('');
+}
+
+function filtraTratte(q) {
+  renderTratte(q);
+}
+
+// ── RENDER TARIFFARIO ──
+function renderTariffario() {
+  const fuel = parseFloat(document.getElementById('tar-fuel').value) || 0;
+  const tbody = document.getElementById('tar-body');
+  const jumpKm = parseInt(document.getElementById('tar-jump-km').value) || 0;
+  let html = '';
+  for (let km = 100; km <= 1500; km++) {
+    const r = tariffario.find(x => x.km === km) || { km, c20: 0, c40: 0 };
+    const f20 = r.c20 ? Math.round(r.c20 * (1 + fuel/100)) : '';
+    const f40 = r.c40 ? Math.round(r.c40 * (1 + fuel/100)) : '';
+    const hl = km === jumpKm ? ' tar-highlight' : '';
+    html += `<tr id="tar-row-${km}" class="${hl}">
+      <td>${km} km</td>
+      <td class="tar-grezzo"><input type="number" data-km="${km}" data-tipo="c20" value="${r.c20||''}" placeholder="—" style="width:60px;border:1px solid #ccc;border-radius:3px;padding:2px 4px;text-align:right;font-size:11px;" oninput="tarUpdate(this)"></td>
+      <td class="tar-finale">${f20 ? '€ '+f20 : '—'}</td>
+      <td class="tar-grezzo"><input type="number" data-km="${km}" data-tipo="c40" value="${r.c40||''}" placeholder="—" style="width:60px;border:1px solid #ccc;border-radius:3px;padding:2px 4px;text-align:right;font-size:11px;" oninput="tarUpdate(this)"></td>
+      <td class="tar-finale">${f40 ? '€ '+f40 : '—'}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+function tarUpdate(input) {
+  const km = parseInt(input.dataset.km);
+  const tipo = input.dataset.tipo;
+  const val = parseFloat(input.value) || 0;
+  let r = tariffario.find(x => x.km === km);
+  if (!r) { r = { km, c20: 0, c40: 0 }; tariffario.push(r); }
+  r[tipo] = val;
+  // Aggiorna solo la cella finale senza re-render completo
+  const fuel = parseFloat(document.getElementById('tar-fuel').value) || 0;
+  const finale = val ? Math.round(val * (1 + fuel/100)) : '—';
+  const row = document.getElementById('tar-row-' + km);
+  if (row) {
+    const cells = row.querySelectorAll('.tar-finale');
+    if (tipo === 'c20') cells[0].textContent = val ? '€ '+finale : '—';
+    if (tipo === 'c40') cells[1].textContent = val ? '€ '+finale : '—';
+  }
+}
+
+function jumpToKm() {
+  const km = parseInt(document.getElementById('tar-jump-km').value);
+  if (!km || km < 100 || km > 1500) return;
+  document.querySelectorAll('.tar-highlight').forEach(r => r.classList.remove('tar-highlight'));
+  const row = document.getElementById('tar-row-' + km);
+  if (row) { row.classList.add('tar-highlight'); row.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+
+async function saveTariffario() {
+  const dati = tariffario.filter(r => r.c20 || r.c40);
+  try {
+    await apiPost('/tariffario', { tariffario: dati });
+    alert('Tariffario salvato (' + dati.length + ' righe).');
+  } catch(e) {
+    alert('Errore salvataggio: ' + e.message);
+  }
+}
+
+function importCSV(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n');
+    let importati = 0;
+    tariffario = [];
+    lines.forEach(line => {
+      const cols = line.split(';');
+      if (cols.length < 3) return;
+      const km  = parseInt(cols[0]);
+      const c20 = parseFloat(cols[1].replace(',', '.')) || 0;
+      const c40 = parseFloat(cols[2].replace(',', '.')) || 0;
+      if (!km || km < 100 || km > 1500) return;
+      tariffario.push({ km, c20, c40 });
+      importati++;
+    });
+    renderTariffario();
+    alert('CSV importato: ' + importati + ' righe. Clicca "Salva tariffario" per confermare.');
+  };
+  reader.readAsText(file);
 }
 
 // ── LOGOUT ──
@@ -304,7 +440,6 @@ async function doLogout() {
 (async () => {
   await checkAuth();
   await syncAll();
-  // Auto-refresh ogni 60 secondi
   setInterval(syncAll, 30000);
 })();
 </script>
