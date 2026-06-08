@@ -22,14 +22,12 @@ exports.handler = async (event) => {
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch(e) {}
 
-  // Autenticazione: legge il token dall'header Authorization
   const authHeader = event.headers.authorization || '';
   const token = authHeader.replace('Bearer ', '');
   if (!token) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Token mancante' }) };
   }
 
-  // Verifica il token e ottieni l'utente
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Non autorizzato' }) };
@@ -45,7 +43,23 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify(data) };
       }
       if (method === 'POST') {
-        const { error } = await supabase.from('pairs').upsert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
+        await supabase.from('pairs').delete().eq('user_id', userId);
+        const { error } = await supabase.from('pairs').insert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
+        if (error) throw error;
+        return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+      }
+    }
+
+    // ORDERS
+    if (path === '/orders') {
+      if (method === 'GET') {
+        const { data, error } = await supabase.from('orders').select('*').eq('user_id', userId);
+        if (error) throw error;
+        return { statusCode: 200, headers, body: JSON.stringify(data) };
+      }
+      if (method === 'POST') {
+        await supabase.from('orders').delete().eq('user_id', userId);
+        const { error } = await supabase.from('orders').insert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
         if (error) throw error;
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
       }
@@ -59,7 +73,8 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify(data) };
       }
       if (method === 'POST') {
-        const { error } = await supabase.from('tratte').upsert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
+        await supabase.from('tratte').delete().eq('user_id', userId);
+        const { error } = await supabase.from('tratte').insert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
         if (error) throw error;
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
       }
@@ -73,7 +88,8 @@ exports.handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify(data) };
       }
       if (method === 'POST') {
-        const { error } = await supabase.from('alias').upsert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
+        await supabase.from('alias').delete().eq('user_id', userId);
+        const { error } = await supabase.from('alias').insert({ user_id: userId, data: body.data, updated_at: new Date().toISOString() });
         if (error) throw error;
         return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
       }
