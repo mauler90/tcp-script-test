@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S.R.C. — Script Riutilizzo Container</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;font-size:12px;color:#002856;background:#f0f5ff;min-height:100vh;display:flex;flex-direction:column;}
+/* TOPBAR */
+.topbar{background:#002856;color:white;padding:10px 18px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.topbar h2{font-size:15px;font-weight:bold;letter-spacing:1px;}
+.meta{margin-left:auto;font-size:11px;color:#bdf3fc;display:flex;align-items:center;gap:12px;}
+.btn-logout{background:none;border:1px solid #bdf3fc;color:#bdf3fc;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:11px;}
+.btn-logout:hover{background:#bdf3fc;color:#002856;}
+/* TABBAR */
+.tabbar{display:flex;background:#e0eaf8;border-bottom:2px solid #002856;flex-shrink:0;align-items:center;padding-right:6px;}
+.tb{padding:9px 22px;cursor:pointer;font-weight:bold;font-size:12px;color:#002856;border:none;background:none;border-bottom:3px solid transparent;}
+.tb.on{border-bottom:3px solid #e74c3c;background:white;}
+.tb:hover:not(.on){background:#d0daf0;}
+/* CONTENUTO TAB */
+.tc{display:none;padding:14px 18px;overflow-y:auto;flex:1;}
+.tc.on{display:block;}
+/* PAIRS */
+.pr{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 10px;margin-bottom:6px;border-radius:5px;font-size:11px;}
+.tag{border-radius:3px;padding:2px 6px;font-size:10px;font-weight:bold;background:#002856;color:white;}
+.tag.imp{background:#1a65b8;}
+.tag.exp{background:#27ae60;}
+.f{padding:1px 4px;}
+.f b{font-weight:bold;}
+.dim{color:#888;}
+.sep{color:#888;font-weight:bold;padding:0 4px;}
+.sec-title{font-size:12px;font-weight:bold;color:#002856;background:#d0daf0;padding:5px 12px;border-radius:4px;margin:10px 0 5px;}
+.cbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#002856;color:white;margin-left:2px;}
+.dbtn{border:none;border-radius:3px;padding:3px 8px;cursor:pointer;font-size:11px;background:#c0392b;color:white;margin-left:2px;}
+/* SYNC BAR */
+.syncbar{background:#fff8e1;border-bottom:1px solid #f0c040;padding:5px 18px;font-size:11px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.syncbar .dot{width:8px;height:8px;border-radius:50%;background:#27ae60;display:inline-block;}
+.syncbar .dot.err{background:#e74c3c;}
+.syncbar .dot.loading{background:#f0a500;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+/* PLACEHOLDER TAB */
+.placeholder{text-align:center;padding:60px 20px;color:#aaa;}
+.placeholder h3{font-size:18px;margin-bottom:8px;}
+.placeholder p{font-size:13px;}
+/* LOADING */
+#loading{text-align:center;padding:40px;color:#888;font-size:13px;}
+/* AZIONI PAIRS */
+.pairs-actions{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;}
+.pairs-actions button{color:white;border:none;border-radius:4px;padding:5px 13px;cursor:pointer;font-size:11px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h2>🔗 S.R.C. — Script Riutilizzo Container</h2>
+  <div class="meta">
+    <span id="lbl-utente"></span>
+    <span id="lbl-sync"></span>
+    <button class="btn-logout" onclick="doLogout()">Esci</button>
+  </div>
+</div>
+
+<div class="syncbar">
+  <span class="dot" id="sync-dot"></span>
+  <span id="sync-msg">Connessione in corso...</span>
+  <span style="margin-left:auto;color:#888;" id="lbl-last-sync"></span>
+  <button onclick="syncAll()" style="background:#002856;color:white;border:none;border-radius:3px;padding:2px 10px;cursor:pointer;font-size:11px;">↺ Aggiorna</button>
+</div>
+
+<div class="tabbar">
+  <button class="tb on" data-t="pairs" onclick="showTab('pairs')">🔗 Riutilizzi (<span id="cnt-pairs">0</span>)</button>
+  <button class="tb" data-t="viaggi" onclick="showTab('viaggi')">🚛 Viaggi</button>
+  <button class="tb" data-t="tratte" onclick="showTab('tratte')">🗺️ Tratte</button>
+  <button class="tb" data-t="tariffario" onclick="showTab('tariffario')">💶 Tariffario</button>
+  <button class="tb" data-t="report" onclick="showTab('report')">📊 Report</button>
+</div>
+
+<!-- TAB RIUTILIZZI -->
+<div class="tc on" id="t-pairs">
+  <div class="pairs-actions">
+    <button onclick="syncAll()" style="background:#1a65b8;">↺ Ricarica</button>
+    <span style="color:#888;font-size:11px;" id="lbl-pairs-count"></span>
+  </div>
+  <div id="pairs-content"><div id="loading">Caricamento riutilizzi...</div></div>
+</div>
+
+<!-- TAB VIAGGI -->
+<div class="tc" id="t-viaggi">
+  <div class="placeholder">
+    <h3>🚛 Viaggi</h3>
+    <p>I viaggi vengono estratti dal gestionale tramite il bookmarklet S.R.C.<br>
+    Usa il bookmarklet come sempre — i dati arriveranno qui automaticamente.</p>
+  </div>
+</div>
+
+<!-- TAB TRATTE -->
+<div class="tc" id="t-tratte">
+  <div class="placeholder">
+    <h3>🗺️ Tratte</h3>
+    <p>In arrivo nella prossima versione.</p>
+  </div>
+</div>
+
+<!-- TAB TARIFFARIO -->
+<div class="tc" id="t-tariffario">
+  <div class="placeholder">
+    <h3>💶 Tariffario</h3>
+    <p>In arrivo nella prossima versione.</p>
+  </div>
+</div>
+
+<!-- TAB REPORT -->
+<div class="tc" id="t-report">
+  <div class="placeholder">
+    <h3>📊 Report</h3>
+    <p>In arrivo nella prossima versione.</p>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://rdjldluwqijjahnqqdur.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkamxkbHV3cWlqamFobnFxZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDcyMjYsImV4cCI6MjA5NjIyMzIyNn0.TzOGtBntu8aRuGn3bG2KoRg6i_Z_uHsuz1T45tAhon4';
+const API = 'https://riutilizzi.netlify.app/.netlify/functions/api';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const PAL = {
+  MSC:   ['#b3d4f5','#85b8ed','#5a9ce0','#3080d4','#1a65b8','#0d4a9a'],
+  Hapag: ['#fdd5a0','#fbb970','#f89d40','#f58010','#d96500','#b84e00'],
+  ONE:   ['#b3f5c8','#85ed9e','#5ae074','#30d44a','#1ab82e','#0a9a1e'],
+  CMA:   ['#d5b3f5','#b885ed','#9a5ae0','#7c30d4','#601ab8','#46009a'],
+};
+
+let token = localStorage.getItem('src_token');
+let allPairs = [];
+
+// ── AUTH CHECK ──
+async function checkAuth() {
+  if (!token) { window.location.href = '/index.html'; return; }
+  const { data, error } = await sb.auth.getUser(token);
+  if (error || !data.user) {
+    // Prova a refreshare la sessione
+    const { data: s2 } = await sb.auth.getSession();
+    if (s2.session) {
+      token = s2.session.access_token;
+      localStorage.setItem('src_token', token);
+      document.getElementById('lbl-utente').textContent = s2.session.user.email;
+    } else {
+      window.location.href = '/index.html';
+      return;
+    }
+  } else {
+    document.getElementById('lbl-utente').textContent = data.user.email;
+  }
+}
+
+// ── TAB ──
+function showTab(name) {
+  document.querySelectorAll('.tb').forEach(b => b.classList.toggle('on', b.dataset.t === name));
+  document.querySelectorAll('.tc').forEach(c => c.classList.toggle('on', c.id === 't-' + name));
+}
+
+// ── API CALL ──
+async function apiGet(endpoint) {
+  const r = await fetch(API + endpoint, {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if (!r.ok) throw new Error('API error ' + r.status);
+  return r.json();
+}
+
+// ── SYNC ──
+async function syncAll() {
+  setSyncStatus('loading', 'Sincronizzazione...');
+  try {
+    const data = await apiGet('/pairs');
+    // data è array di righe DB, ogni riga ha .data che contiene l'array dei pairs
+    if (data && data.length > 0) {
+      allPairs = data[0].data || [];
+    } else {
+      allPairs = [];
+    }
+    renderPairs();
+    setSyncStatus('ok', 'Sincronizzato');
+    document.getElementById('lbl-last-sync').textContent = 'Ultimo aggiornamento: ' + new Date().toLocaleTimeString('it-IT');
+  } catch(e) {
+    setSyncStatus('err', 'Errore connessione');
+    document.getElementById('pairs-content').innerHTML = '<div style="color:#c0392b;padding:20px;text-align:center;">Errore nel caricamento dati.<br><small>' + e.message + '</small></div>';
+  }
+}
+
+function setSyncStatus(stato, msg) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-msg');
+  dot.className = 'dot' + (stato === 'err' ? ' err' : stato === 'loading' ? ' loading' : '');
+  lbl.textContent = msg;
+}
+
+// ── RENDER PAIRS ──
+function pd(str) {
+  if (!str) return null;
+  const m = str.match(/(\d{2})\/(\d{2})\/(\d{2})/);
+  if (!m) return null;
+  return new Date('20' + m[3] + '-' + m[2] + '-' + m[1]);
+}
+
+function monday(offset) {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + offset * 7);
+  return d;
+}
+
+function renderPairs() {
+  const content = document.getElementById('pairs-content');
+  const monStart = monday(0);
+
+  const pairs = allPairs.filter(p => {
+    const de = pd(p.exp && p.exp.delivery);
+    return !de || de >= monStart;
+  });
+
+  const hidden = allPairs.length - pairs.length;
+
+  document.getElementById('cnt-pairs').textContent = pairs.length;
+  document.getElementById('lbl-pairs-count').textContent =
+    pairs.length + ' attivi' + (hidden ? ' · ' + hidden + ' precedenti nascosti' : '');
+
+  if (!pairs.length) {
+    content.innerHTML = '<p style="color:#aaa;text-align:center;padding:40px;font-size:13px;">Nessun riutilizzo attivo.</p>' +
+      (hidden ? '<p style="color:#aaa;font-size:11px;text-align:center;">' + hidden + ' riutilizzi precedenti nascosti</p>' : '');
+    return;
+  }
+
+  // Raggruppa per data import
+  const groups = {};
+  pairs.forEach((p, i) => {
+    const k = (p.imp && p.imp.delivery) ? p.imp.delivery.substring(0, 8) : '?';
+    (groups[k] = groups[k] || []).push({ p, i: allPairs.indexOf(p) });
+  });
+
+  const cc = {};
+  const html = Object.keys(groups)
+    .sort((a, b) => (pd(groups[a][0].p.imp.delivery) || 0) - (pd(groups[b][0].p.imp.delivery) || 0))
+    .map(k => {
+      const dateLabel = k;
+      const rows = groups[k].map(({ p, i }) => {
+        const carr = (p.imp && p.imp.carrier) || '';
+        const pal = PAL[carr] || ['#aabbdd'];
+        cc[carr] = (cc[carr] || 0);
+        const bg = pal[cc[carr]++ % pal.length];
+        const tappa = p.tappa
+          ? `<span style="background:#1a7a1a;color:white;border-radius:4px;font-size:10px;font-weight:bold;padding:2px 7px;margin:0 2px;">⚑ via ${p.tappa}</span>`
+          : '';
+        return `<div class="pr" style="border-left:4px solid ${bg};background:${bg}22;">
+          <span class="tag imp">📥 IMP</span>
+          <span class="tag">${p.imp.carrier || ''}</span>
+          <span class="tag">${p.imp.cont || ''}</span>
+          <span class="f">${p.imp.contNr || '—'}</span>
+          <span class="f"><b>${p.imp.address || ''}</b></span>
+          <span class="f">${p.imp.delivery || ''}</span>
+          <span class="f">${p.imp.port || ''}</span>
+          <span class="f dim">LEF: ${p.imp.reqBranch || '—'}</span>
+          <span class="sep">↕</span>
+          ${tappa}
+          <span class="tag exp">📤 EXP</span>
+          <span class="tag">${p.exp.carrier || ''}</span>
+          <span class="tag">${p.exp.cont || ''}</span>
+          <span class="f"><b>${p.exp.address || ''}</b></span>
+          <span class="f">${p.exp.delivery || ''}</span>
+          <span class="f">${p.exp.port || ''}</span>
+          <span class="f dim">LEF: ${p.exp.reqBranch || '—'}</span>
+          <div style="margin-left:auto;display:flex;gap:4px;flex-shrink:0;">
+            <button class="cbtn" onclick="cpPair(${i})">📋 Copia</button>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="sec-title">📅 Import del ${dateLabel}</div>${rows}`;
+    }).join('');
+
+  content.innerHTML = html;
+}
+
+// ── COPIA PAIR ──
+function cpPair(i) {
+  const p = allPairs[i];
+  if (!p) return;
+  const t = '📥 IMPORT | ' + p.imp.carrier + ' | ' + p.imp.cont + ' | ' + (p.imp.contNr || '—') + ' | ' + p.imp.address + ' | ' + p.imp.delivery + ' | ' + p.imp.port + ' | LEF: ' + (p.imp.reqBranch || '—') + '\n↕ Riutilizza con\n📤 EXPORT | ' + p.exp.carrier + ' | ' + p.exp.cont + ' | ' + (p.exp.contNr || '—') + ' | ' + p.exp.address + ' | ' + p.exp.delivery + ' | ' + p.exp.port + ' | LEF: ' + (p.exp.reqBranch || '—');
+  navigator.clipboard.writeText(t).catch(() => {});
+}
+
+// ── LOGOUT ──
+async function doLogout() {
+  await sb.auth.signOut();
+  localStorage.removeItem('src_token');
+  localStorage.removeItem('src_user_id');
+  window.location.href = '/index.html';
+}
+
+// ── INIT ──
+(async () => {
+  await checkAuth();
+  await syncAll();
+  // Auto-refresh ogni 60 secondi
+  setInterval(syncAll, 60000);
+})();
+</script>
+</body>
+</html>
