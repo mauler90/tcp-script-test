@@ -1452,11 +1452,22 @@ function collect(intervalMin, carriers, containers) {
             });
             if (changes.length > 0) {
                 var existing = alerts[key];
-                var newTooltip = changes.join(' | ');
-                if (existing && existing.dismissed && existing.dismissedTooltip === newTooltip) {
-                } else if (!existing || existing.tooltip !== newTooltip) {
-                    alerts[key] = { tooltip: newTooltip, at: now.toISOString(), dismissed: false };
+                // Lista delle singole variazioni gia ignorate (dismiss mirato)
+                var dl = (existing && existing.dismissedList) ? existing.dismissedList : [];
+                // Retrocompatibilita: vecchio formato con dismissed=true => ignora tutto cio che era visibile
+                if (existing && existing.dismissed && existing.dismissedTooltip) {
+                    existing.dismissedTooltip.split(' | ').forEach(function(c){ if(dl.indexOf(c)<0) dl.push(c); });
                 }
+                // Mantieni nella dismissedList solo le voci ancora pertinenti
+                dl = dl.filter(function(c){ return changes.indexOf(c) >= 0; });
+                // Variazioni effettivamente da mostrare = quelle non ignorate
+                var visible = changes.filter(function(c){ return dl.indexOf(c) < 0; });
+                alerts[key] = {
+                    tooltip: visible.join(' | '),
+                    changes: changes,
+                    dismissedList: dl,
+                    at: (existing && existing.at) ? existing.at : now.toISOString()
+                };
             } else {
                 delete alerts[key];
             }
@@ -2206,6 +2217,8 @@ function doAbbina(){
     const _expSelE=Object.assign({},selE,{clienteExcel:_expClient});
     pairs.push({imp:_impSelI,exp:_expSelE,at:new Date().toISOString()});
     sp(pairs);
+    // Rimettere in essere: revoca eventuale annullamento precedente
+    _tcpRevokeRemoval(((_impSelI.contNr||_impSelI.id)||'')+'|'+((_expSelE.contNr||_expSelE.id)||''));
     var _rSt=null;try{_rSt=JSON.parse(localStorage.getItem('tcp_stats')||'null');}catch(_x){}
     if(!_rSt)_rSt={total:0,monthly:{}};
     var _rMn=new Date().getFullYear()+'-'+('0'+(new Date().getMonth()+1)).slice(-2);
@@ -2564,8 +2577,9 @@ function buildPairsHtml(){
                 try{_alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
                 var _stableKey=((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
                 var _al=_alerts[_stableKey];
-                var _alTip=_al?_al.tooltip.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
-                var _alSpan=(_al&&!_al.dismissed)
+                var _alVisible=_al?(_al.tooltip||''):'';
+                var _alTip=_alVisible?_alVisible.split('"').join('&#34;').split(String.fromCharCode(10)).join(' | '):'';
+                var _alSpan=(_al&&_alVisible)
                     ?'<span style="display:inline-flex;align-items:center;gap:3px;margin-right:4px;">'
                     +'<span style="background:#e67e22;color:white;border-radius:3px;padding:2px 5px;font-size:11px;font-weight:bold;">\u26a0\ufe0f</span>'
                     +'<button data-k="'+_stableKey+'" onclick="tcpAccettaVariazione(this,event)" title="'+_alTip+'" style="cursor:pointer;background:#27ae60;color:white;border:none;border-radius:3px;padding:2px 7px;font-size:11px;font-weight:bold;">\u2713 Accetta</button>'
@@ -2573,7 +2587,7 @@ function buildPairsHtml(){
                     +'</span>'
                     :'';
                 var _alBadge=_alSpan;
-                var _alBorder=(_al&&!_al.dismissed)?'outline:2px solid #e67e22;':'';
+                var _alBorder=(_al&&_alVisible)?'outline:2px solid #e67e22;':'';
                 return \`<div class="pr" id="pair-\${realIdx}" style="border-left:4px solid \${bg};background:\${bg}22;\${_alBorder}">
                     \${_alBadge}<span class="tag imp">📥 IMP</span>
                     <span class="tag">\${p.imp.carrier}</span><span class="tag">\${p.imp.cont}</span>
@@ -2651,6 +2665,8 @@ function importPair(txt){
         if(existing.some(function(p){return p.imp.id===imp.id&&p.exp.id===exp.id;})){alert('Questo riutilizzo è già presente.');return;}
         existing.push({imp:imp,exp:exp,at:new Date().toISOString(),imported:true});
         sp(existing);
+        // Rimettere in essere: revoca eventuale annullamento precedente
+        _tcpRevokeRemoval(((imp.contNr||imp.id)||'')+'|'+((exp.contNr||exp.id)||''));
         var orders=lo();
         var _t=function(s){return(s||'').trim();};
         var _lef=function(s){return _t(s).replace(/\s*\(.*?\)\s*$/,'').trim();};
@@ -2894,6 +2910,51 @@ function tcpExportPairs(){
     a.click();URL.revokeObjectURL(a.href);
 }
 // -- MERGE LOGIC --
+// Revoca annullamento: toglie una coppia dalla blacklist locale (quando viene rimessa in essere)
+function _tcpRevokeRemoval(rKey){
+    if(!rKey)return;
+    var removed=[];
+    try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
+    var before=removed.length;
+    removed=removed.filter(function(r){return(r.key||r)!==rKey;});
+    if(removed.length!==before)localStorage.setItem('tcp_removed_pairs',JSON.stringify(removed));
+}
+// Calcola la chiave standard di una coppia
+function _tcpPairKey(p){
+    if(!p)return'';
+    return((p.imp&&p.imp.contNr)||(p.imp&&p.imp.id)||'')+'|'+((p.exp&&p.exp.contNr)||(p.exp&&p.exp.id)||'');
+}
+// Propagazione annullamenti: rimuove automaticamente le coppie che il collega ha annullato
+function tcpDoMergeRemovals(incomingRemovals){
+    if(!incomingRemovals||!incomingRemovals.length)return{removed:0,keys:[]};
+    var h14d=14*24*60*60*1000;
+    var now=Date.now();
+    var pairs=lp();
+    var blacklist=[];
+    try{blacklist=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
+    var removedKeys=[];
+    incomingRemovals.forEach(function(r){
+        var rKey=r.key||r;
+        var rAt=r.at?new Date(r.at).getTime():now;
+        if(now-rAt>h14d)return; // annullamento troppo vecchio: ignora
+        var idx=pairs.findIndex(function(p){return _tcpPairKey(p)===rKey;});
+        if(idx>=0){
+            pairs.splice(idx,1);
+            removedKeys.push(rKey);
+            // Aggiungi alla blacklist locale (origine: collega) per non riaverla al prossimo sync
+            if(!blacklist.some(function(b){return(b.key||b)===rKey;})){
+                blacklist.push({key:rKey,at:new Date(rAt).toISOString(),fromCollega:true});
+            }
+        }
+    });
+    if(removedKeys.length){
+        _pushUndo();
+        sp(pairs);
+        localStorage.setItem('tcp_removed_pairs',JSON.stringify(blacklist));
+        rPairs();rPlanner();
+    }
+    return{removed:removedKeys.length,keys:removedKeys};
+}
 function tcpDoMerge(incoming){
     var existing=lp();
     var toAdd=[];var conflicts=[];var ignored=0;var updates=[];
@@ -2902,7 +2963,21 @@ function tcpDoMerge(incoming){
     try{removed=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
     incoming.forEach(function(inc){
         var rKey=(t(inc.imp&&inc.imp.contNr)||t(inc.imp&&inc.imp.id))+'|'+(t(inc.exp&&inc.exp.contNr)||t(inc.exp&&inc.exp.id));
-        if(removed.some(function(r){return(r.key||r)===rKey;})){ignored++;return;}
+        // Presenza batte blacklist SOLO se la coppia in arrivo e' piu recente dell'annullamento:
+        // significa che il collega l'ha rimessa in essere dopo la rimozione. Altrimenti la
+        // coppia in arrivo e' la "vecchia" riproposta e va ancora esclusa.
+        var blEntry=removed.find(function(r){return(r.key||r)===rKey;});
+        if(blEntry){
+            var remAt=blEntry.at?new Date(blEntry.at).getTime():0;
+            var incAt=((inc.at&&new Date(inc.at).getTime())||(inc.imp&&inc.imp.addedAt&&new Date(inc.imp.addedAt).getTime())||0);
+            if(incAt&&remAt&&incAt>remAt){
+                // Rimessa in essere: revoca blacklist e riaccetta
+                removed=removed.filter(function(r){return(r.key||r)!==rKey;});
+                _tcpRevokeRemoval(rKey);
+            }else{
+                ignored++;return; // ancora annullata
+            }
+        }
         var _incExpDel=pd((inc.exp&&inc.exp.delivery)||'');
         if(_incExpDel&&_incExpDel<monday(0)){ignored++;return;}
         var iNr=t(inc.imp&&inc.imp.contNr);
@@ -3007,51 +3082,6 @@ function tcpImportPairsFile(input){
     reader.readAsText(file,'UTF-8');
 }
 // -- PUBLISH SU GIST --
-async function tcpGetValidToken(){
-    var sbSession=null;
-    try{sbSession=JSON.parse(localStorage.getItem('sb-rdjldluwqijjahnqqdur-auth-token'));}catch(e){}
-    if(!sbSession)return localStorage.getItem('src_token')||'';
-    var exp=sbSession.expires_at||0;
-    var now=Math.floor(Date.now()/1000);
-    if(exp-now>60){return sbSession.access_token||localStorage.getItem('src_token')||'';}
-    // Token scaduto o in scadenza: rinnova
-    var refreshToken=sbSession.refresh_token||'';
-    if(!refreshToken)return localStorage.getItem('src_token')||'';
-    try{
-        var r=await fetch('https://rdjldluwqijjahnqqdur.supabase.co/auth/v1/token?grant_type=refresh_token',{
-            method:'POST',
-            headers:{'Content-Type':'application/json','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkamxkbHV3cWlqamFobnFxZHVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NDcyMjYsImV4cCI6MjA5NjIyMzIyNn0.TzOGtBntu8aRuGn3bG2KoRg6i_Z_uHsuz1T45tAhon4'},
-            body:JSON.stringify({refresh_token:refreshToken})
-        });
-        var data=await r.json();
-        if(data.access_token){
-            sbSession.access_token=data.access_token;
-            sbSession.refresh_token=data.refresh_token||refreshToken;
-            sbSession.expires_at=Math.floor(Date.now()/1000)+3600;
-            localStorage.setItem('sb-rdjldluwqijjahnqqdur-auth-token',JSON.stringify(sbSession));
-            localStorage.setItem('src_token',data.access_token);
-            return data.access_token;
-        }
-    }catch(e){}
-    return localStorage.getItem('src_token')||'';
-}
-async function tcpSyncBackend(pairs,tratte,alias,tappe){
-    var sbToken=await tcpGetValidToken();
-    if(!sbToken)return;
-    var base='https://riutilizzi.netlify.app/.netlify/functions/api';
-    var h={'Content-Type':'application/json','Authorization':'Bearer '+sbToken};
-    fetch(base+'/pairs',{method:'POST',headers:h,body:JSON.stringify({data:pairs})}).catch(function(){});
-    fetch(base+'/tratte',{method:'POST',headers:h,body:JSON.stringify({data:tratte})}).catch(function(){});
-    fetch(base+'/alias',{method:'POST',headers:h,body:JSON.stringify({data:alias})}).catch(function(){});
-    fetch(base+'/tappe',{method:'POST',headers:h,body:JSON.stringify({tappe:tappe})}).catch(function(){});
-}
-async function tcpSyncBackendOrders(orders){
-    var sbToken=await tcpGetValidToken();
-    if(!sbToken)return;
-    var base='https://riutilizzi.netlify.app/.netlify/functions/api';
-    var h={'Content-Type':'application/json','Authorization':'Bearer '+sbToken};
-    fetch(base+'/orders',{method:'POST',headers:h,body:JSON.stringify({data:orders})}).catch(function(){});
-}
 function tcpPublishGist(){
     var tok=localStorage.getItem('tcp_gist_token')||'';
     if(!tok){alert('Imposta prima il token GitHub nelle impostazioni Gist.');tcpGistSettings();return;}
@@ -3061,11 +3091,15 @@ function tcpPublishGist(){
     var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
     var alias=[];try{alias=JSON.parse(localStorage.getItem('tcp_tratte_alias')||'[]');}catch(e){}
     var tappe=[];try{tappe=JSON.parse(localStorage.getItem('tcp_tappe_custom')||'[]');}catch(e){}
+    var removals=[];try{removals=JSON.parse(localStorage.getItem('tcp_removed_pairs')||'[]');}catch(e){}
+    // Propaga solo gli annullamenti originati da questa postazione (non quelli ricevuti dal collega)
+    var myRemovals=removals.filter(function(r){return typeof r==='object'&&!r.fromCollega;});
     var files={
         'tcp_pairs.json':{content:JSON.stringify({version:1,exported:ts,pairs:pairs},null,2)},
         'tcp_tratte.json':{content:JSON.stringify({version:1,exported:ts,tratte:tratte},null,2)},
         'tcp_alias.json':{content:JSON.stringify({version:1,exported:ts,alias:alias},null,2)},
-        'tcp_tappe.json':{content:JSON.stringify({version:1,exported:ts,tappe:tappe},null,2)}
+        'tcp_tappe.json':{content:JSON.stringify({version:1,exported:ts,tappe:tappe},null,2)},
+        'tcp_removals.json':{content:JSON.stringify({version:1,exported:ts,removals:myRemovals},null,2)}
     };
     var body=JSON.stringify({description:'S.R.C sync',public:false,files:files});
     var url=gid?'https://api.github.com/gists/'+gid:'https://api.github.com/gists';
@@ -3080,7 +3114,6 @@ function tcpPublishGist(){
                 localStorage.setItem('tcp_gist_my_last_pub',new Date().toISOString());
                 if(btn){btn.textContent='\u2601\uFE0F Pubblica';btn.disabled=false;}
                 tcpToast('\u2601\uFE0F Pubblicato'+(gid?'':' - ID: '+data.id+' (salvato)'));
-                tcpSyncBackend(pairs,tratte,alias,tappe);
             }else{
                 if(btn){btn.textContent='\u2601\uFE0F Pubblica';btn.disabled=false;}
                 alert('Errore: '+(data.message||JSON.stringify(data)));
@@ -3142,6 +3175,14 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
         .then(function(data){
             if(btn){btn.textContent=btn.dataset.label;btn.disabled=false;}
             if(!data.files){alert('Gist collega non trovato o vuoto.');return;}
+            // Applica PRIMA gli annullamenti del collega (rimozione automatica)
+            var _remResult={removed:0,keys:[]};
+            if(data.files['tcp_removals.json']){
+                try{
+                    var rr=JSON.parse(data.files['tcp_removals.json'].content);
+                    if(rr.removals)_remResult=tcpDoMergeRemovals(rr.removals);
+                }catch(e){}
+            }
             var pairsResult={toAdd:[],conflicts:[],ignored:0};
             if(data.files['tcp_pairs.json']){
                 var pp=JSON.parse(data.files['tcp_pairs.json'].content);
@@ -3163,6 +3204,9 @@ function tcpFetchCollegaGist(tok,gidc,autoPublish,btnId){
             }
             _mergePayload={pairs:pairsResult,tratte:tratteResult,tariffario:{toAdd:[],conflicts:[],ignored:0},source:'gist',autoPublish:autoPublish};
             tcpSetPairsBadge(0);
+            if(_remResult.removed>0){
+                tcpToast('\uD83D\uDDD1 Il collega ha annullato '+_remResult.removed+' riutilizz'+(_remResult.removed===1?'o':'i')+' \u2014 rimoss'+(_remResult.removed===1?'o':'i')+' automaticamente',5000);
+            }
             tcpShowSyncModal(_mergePayload);
         })
         .catch(function(err){
@@ -4070,9 +4114,16 @@ function tcpDismissPairAlert(elOrIdx,ev){
     var key=typeof elOrIdx==='string'?elOrIdx:(elOrIdx&&elOrIdx.dataset?elOrIdx.dataset.k:String(elOrIdx));
     var alerts={};
     try{alerts=JSON.parse(localStorage.getItem('tcp_pair_alerts')||'{}');}catch(e){}
-    if(alerts[key]){
-        alerts[key].dismissed=true;
-        alerts[key].dismissedTooltip=alerts[key].tooltip;
+    var a=alerts[key];
+    if(a){
+        var dl=a.dismissedList||[];
+        // Archivia esattamente le variazioni attualmente mostrate
+        var vis=(a.tooltip||'').split(' | ').filter(Boolean);
+        vis.forEach(function(c){if(dl.indexOf(c)<0)dl.push(c);});
+        a.dismissedList=dl;
+        a.tooltip='';
+        // Pulizia campi vecchio formato
+        delete a.dismissed;delete a.dismissedTooltip;
     }
     localStorage.setItem('tcp_pair_alerts',JSON.stringify(alerts));
     rPairs();
@@ -4730,7 +4781,6 @@ function runCycle() {
     const ts = new Date().toLocaleTimeString('it-IT');
     openOrUpdate(state, ts, newCount, newIds, modIds);
     setStatus('Aggiornato: ' + ts + ' (+' + newCount + ')');
-    tcpSyncBackendOrders(ls.orders());
     timer = setTimeout(() => { doSearch(); }, state.interval * 60000);
 }
 
