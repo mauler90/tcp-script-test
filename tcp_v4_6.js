@@ -114,14 +114,6 @@ function normalizeCarrier(text) {
     return null;
 }
 
-// Confronto id tratta case-insensitive (e tollerante agli spazi).
-// NON modifica gli id salvati: normalizza solo al momento del confronto.
-// Assegnata a window cosi e' raggiungibile da TUTTI gli IIFE.
-window.tcpTidEq = window.tcpTidEq || function(a, b) {
-    var n = function(s){ return (s||'').toLowerCase().replace(/\s+/g,' ').trim(); };
-    return n(a) === n(b);
-};
-
 function normalizeContainer(text) {
     if (/reef/i.test(text))      return "40'R";
     if (/open.?top/i.test(text)) return "40OT";
@@ -777,7 +769,7 @@ function tcpMergeTratteGest(input) {
         var existing = []; try { existing = JSON.parse(localStorage.getItem('tcp_tratte')||'[]'); } catch(e) {}
         var added = 0, conflicts = [];
         incoming.forEach(function(t) {
-            var ex = existing.find(function(x){return window.tcpTidEq(x.id,t.id);});
+            var ex = existing.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(t.id||'').toLowerCase().replace(/\s+/g,' ').trim());});
             if (!ex) { existing.push(t); added++; }
             else if (ex.km !== t.km) { conflicts.push({ex:ex, inc:t}); }
         });
@@ -1717,7 +1709,7 @@ function buildReportHtml(pairs, orders) {
         if(p.km>0)return false;
         // verifica se esiste tratta con tappa nell'archivio
         var tid=[p.imp.port,p.imp.address,p.tappa||'',p.exp.address,p.exp.port].join('||');
-        var trattaTappa=tratte.find(function(t){return window.tcpTidEq(t.id,tid)&&t.km>0;});
+        var trattaTappa=tratte.find(function(t){return (String(t.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(tid||'').toLowerCase().replace(/\s+/g,' ').trim())&&t.km>0;});
         return !trattaTappa;
     });
     var dI=pairs.filter(function(p){
@@ -3137,7 +3129,7 @@ function tcpDoMergeTratte(incoming){
     var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
     var toAdd=[];var conflicts=[];var ignored=0;
     incoming.forEach(function(t){
-        var ex=existing.find(function(x){return window.tcpTidEq(x.id,t.id);});
+        var ex=existing.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(t.id||'').toLowerCase().replace(/\s+/g,' ').trim());});
         if(!ex){toAdd.push(t);}
         else if(ex.km!==t.km){conflicts.push({ex:ex,inc:t});}
         else{ignored++;}
@@ -3687,14 +3679,14 @@ function tcpKmBadge(p,i){
     if(!km){
         var tratte=[]; try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
         var tid=[p.imp.port,p.imp.address,p.tappa||'',p.exp.address,p.exp.port].join('||');
-        var tratta=tratte.find(function(x){return window.tcpTidEq(x.id,tid);});
+        var tratta=tratte.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(tid||'').toLowerCase().replace(/\s+/g,' ').trim());});
         if(!tratta){
             var impAliases=tcpResolviAlias(p.imp.address||'');
             var expAliases=tcpResolviAlias(p.exp.address||'');
             for(var _ia=0;_ia<impAliases.length&&!tratta;_ia++){
                 for(var _ea=0;_ea<expAliases.length&&!tratta;_ea++){
                     var _tid=[p.imp.port,impAliases[_ia],p.tappa||'',expAliases[_ea],p.exp.port].join('||');
-                    tratta=tratte.find(function(x){return window.tcpTidEq(x.id,_tid);});
+                    tratta=tratte.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(_tid||'').toLowerCase().replace(/\s+/g,' ').trim());});
                 }
             }
         }
@@ -3770,7 +3762,7 @@ function tcpSaveKm(i){
     if(km>0){
         var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
         var tid=[p.imp.port,p.imp.address,p.tappa||'',p.exp.address,p.exp.port].join('||');
-        var ex=tratte.find(function(x){return window.tcpTidEq(x.id,tid);});
+        var ex=tratte.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(tid||'').toLowerCase().replace(/\s+/g,' ').trim());});
         if(ex){ex.km=km;}
         else{tratte.push({id:tid,portoImp:p.imp.port,scarico:p.imp.address,tappa:p.tappa||'',carico:p.exp.address,portoExp:p.exp.port,km:km});}
         localStorage.setItem('tcp_tratte',JSON.stringify(tratte));
@@ -4533,7 +4525,7 @@ window.tcpMergeTratte=function(input){
                 var toAdd=[];
                 var conflicts=[];
                 incoming.forEach(function(t){
-                    var ex=existing.find(function(x){return window.tcpTidEq(x.id,t.id);});
+                    var ex=existing.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(t.id||'').toLowerCase().replace(/\s+/g,' ').trim());});
                     if(!ex){toAdd.push(t);}
                     else if(ex.km!==t.km){conflicts.push({existing:ex,incoming:t});}
                 });
