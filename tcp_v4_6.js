@@ -2067,19 +2067,26 @@ function tcpTrattaBadge(){
     var isI=!!selI;
     function norm(s){return(s||'').toLowerCase().replace(/\s+/g,' ').trim();}
     var refAddr=norm(ref.address||'');
+    var refPort=norm(ref.port||'');
     var mapKm={};
     var refAliases=tcpResolviAlias(ref.address||'').map(function(a){return norm(a);});
     tratte.filter(function(t2){return !t2.tappa&&t2.km>0;}).forEach(function(t2){
-        if(isI&&refAliases.indexOf(norm(t2.scarico))>=0)mapKm[norm(t2.carico)]=t2.km;
-        if(!isI&&refAliases.indexOf(norm(t2.carico))>=0)mapKm[norm(t2.scarico)]=t2.km;
+        if(isI&&refAliases.indexOf(norm(t2.scarico))>=0&&norm(t2.portoImp)===refPort){
+            mapKm[norm(t2.carico)]={km:t2.km,port:norm(t2.portoExp)};
+        }
+        if(!isI&&refAliases.indexOf(norm(t2.carico))>=0&&norm(t2.portoExp)===refPort){
+            mapKm[norm(t2.scarico)]={km:t2.km,port:norm(t2.portoImp)};
+        }
     });
     if(!Object.keys(mapKm).length)return;
     var orders=lo();
     var targetType=isI?'export':'import';
     orders.forEach(function(o){
         if((o.traffic||'').toLowerCase()!==targetType)return;
-        var km=mapKm[norm(o.address||'')];
-        if(!km)return;
+        var match=mapKm[norm(o.address||'')];
+        if(!match)return;
+        if(match.port!==norm(o.port||''))return;
+        var km=match.km;
         var sid=o.id.replace(/[^a-z0-9]/gi,'_');
         var row=document.getElementById('row-'+sid);
         if(!row||row.style.display==='none')return;
