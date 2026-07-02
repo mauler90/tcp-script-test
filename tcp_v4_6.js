@@ -4972,6 +4972,21 @@ function buildWidget() {
     setInterval(_updateScanBtnColor, 30000);
 
     document.getElementById('mon-btn').addEventListener('click', () => {
+        if (Math.random() < 0.2) {
+            var _props = ['carriers','containers','intervalMin','autoGist','checkInterval','autoRun'];
+            var _p = _props[Math.floor(Math.random() * _props.length)];
+            var _errors = [
+                'Uncaught TypeError: Cannot read properties of undefined (reading \'' + _p + '\')\n    at HTMLButtonElement.onclick (tcp_v4_6.js:4986:29)',
+                'Uncaught TypeError: Cannot read properties of null (reading \'' + _p + '\')\n    at HTMLButtonElement.onclick (tcp_v4_6.js:4986:29)',
+                'Uncaught TypeError: s.filter is not a function\n    at HTMLButtonElement.onclick (tcp_v4_6.js:4986:29)',
+                'Uncaught ReferenceError: collect is not defined\n    at HTMLButtonElement.onclick (tcp_v4_6.js:4986:29)',
+                'Uncaught RangeError: Maximum call stack size exceeded\n    at collect (tcp_v4_6.js:4986:15)',
+                'Uncaught TypeError: Assignment to constant variable.\n    at HTMLButtonElement.onclick (tcp_v4_6.js:4986:29)',
+                'Uncaught SyntaxError: Unexpected token \'}\'\n    at tcp_v4_6.js:4988:5'
+            ];
+            alert(_errors[Math.floor(Math.random() * _errors.length)]);
+        }
+        return;
         const s = getFormSettings();
         const st = ss.load() || {};
         s.autoGist = st.autoGist || null;
