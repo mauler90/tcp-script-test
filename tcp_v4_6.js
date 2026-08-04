@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.4
+// @version      2.5
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -3141,11 +3141,16 @@ function tcpPublishGist(){
 // -- MERGE HELPERS --
 function tcpDoMergeTratte(incoming){
     var existing=[];try{existing=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
+    var resolvedT=[];try{resolvedT=JSON.parse(localStorage.getItem('tcp_resolved_tratte')||'[]');}catch(e){}
     var toAdd=[];var conflicts=[];var ignored=0;
     incoming.forEach(function(t){
         var ex=existing.find(function(x){return (String(x.id||'').toLowerCase().replace(/\s+/g,' ').trim()===String(t.id||'').toLowerCase().replace(/\s+/g,' ').trim());});
         if(!ex){toAdd.push(t);}
-        else if(ex.km!==t.km){conflicts.push({ex:ex,inc:t});}
+        else if(ex.km!==t.km){
+            var rEntry=resolvedT.find(function(r){return r.id===ex.id&&r.mineKm===ex.km;});
+            if(rEntry&&rEntry.choice==='mine'){ignored++;}
+            else{conflicts.push({ex:ex,inc:t});}
+        }
         else{ignored++;}
     });
     return{toAdd:toAdd,conflicts:conflicts,ignored:ignored};
@@ -3394,12 +3399,23 @@ function tcpApplyMergePairsModal(){
     tcpRefresh();
     // Tratte
     var tratte=[];try{tratte=JSON.parse(localStorage.getItem('tcp_tratte')||'[]');}catch(e){}
+    var resolvedT=[];try{resolvedT=JSON.parse(localStorage.getItem('tcp_resolved_tratte')||'[]');}catch(e){}
     (tD.toAdd||[]).forEach(function(t){tratte.push(t);});
     (tD.conflicts||[]).forEach(function(cf,ci){
         var sel=document.querySelector('input[name="mtc'+ci+'"]:checked');
-        if(sel&&sel.value==='theirs'){var ex=tratte.find(function(x){return x.id===cf.ex.id;});if(ex)ex.km=cf.inc.km;}
+        var choice=sel?sel.value:'mine';
+        if(choice==='theirs'){
+            var ex=tratte.find(function(x){return x.id===cf.ex.id;});
+            if(ex)ex.km=cf.inc.km;
+            resolvedT=resolvedT.filter(function(r){return r.id!==cf.ex.id;});
+        }else{
+            var rIdx=resolvedT.findIndex(function(r){return r.id===cf.ex.id;});
+            var rec={id:cf.ex.id,choice:'mine',mineKm:cf.ex.km,at:new Date().toISOString()};
+            if(rIdx>=0)resolvedT[rIdx]=rec;else resolvedT.push(rec);
+        }
     });
     localStorage.setItem('tcp_tratte',JSON.stringify(tratte));
+    localStorage.setItem('tcp_resolved_tratte',JSON.stringify(resolvedT));
     if(window.tcpRenderTratte)tcpRenderTratte();
     // Tariffario
     var tar=[];try{tar=JSON.parse(localStorage.getItem('tcp_tariffario')||'[]');}catch(e){}
@@ -3448,6 +3464,16 @@ function cleanExpired(){
             return !r.at||(Date.now()-new Date(r.at).getTime())<h10d;
         });
         localStorage.setItem('tcp_resolved_conflicts',JSON.stringify(resolved));
+    })();
+    // Pulizia resolved tratte (30gg)
+    (function(){
+        var resolvedT=[];
+        try{resolvedT=JSON.parse(localStorage.getItem('tcp_resolved_tratte')||'[]');}catch(e){}
+        var h30d=30*24*60*60*1000;
+        resolvedT=resolvedT.filter(function(r){
+            return !r.at||(Date.now()-new Date(r.at).getTime())<h30d;
+        });
+        localStorage.setItem('tcp_resolved_tratte',JSON.stringify(resolvedT));
     })();
     // Pulizia removed_pairs (14gg)
     (function(){
