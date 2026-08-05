@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.5
+// @version      2.6
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -1343,9 +1343,11 @@ function collect(intervalMin, carriers, containers) {
                 const _ldvN     = cr.querySelector('td:nth-child(12)')?.innerText.trim() || '';
                 const _carrierN = ncr(rawCarrier) || _exO.carrier;
                 const _contN    = nct(rawCont) || _exO.cont;
+                const _adrElN   = cr.querySelector('[id*="dangerousGoodsPanel"] > span');
+                const _adrN     = _adrElN ? 'ADR' : '';
                 if (_exO.delivery !== _dlvN || _exO.port !== _portN || _exO.ldv !== _ldvN ||
                     _exO.address !== address || _exO.carrier !== _carrierN || _exO.cont !== _contN ||
-                    _exO.branch !== branch) {
+                    _exO.branch !== branch || _exO.reqTruck !== reqTruck || _exO.adr !== _adrN) {
                     _exO.delivery   = _dlvN;
                     _exO.port       = _portN;
                     _exO.ldv        = _ldvN;
@@ -1353,6 +1355,8 @@ function collect(intervalMin, carriers, containers) {
                     _exO.carrier    = _carrierN;
                     _exO.cont       = _contN;
                     _exO.branch     = branch;
+                    _exO.reqTruck   = reqTruck;
+                    _exO.adr        = _adrN;
                     _exO.isModified = true;
                     _exO.modifiedAt = now.toISOString();
                 }
