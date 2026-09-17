@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.9
+// @version      3.0
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -835,6 +835,24 @@ window.tcpSelectRow = function(orderId) {
                 if (inp) inp.click();
             }
         });
+    });
+};
+
+window.tcpOpenPdf = function(orderId) {
+    window.focus();
+    document.querySelectorAll('tr.ui-expanded-row').forEach(function(row) {
+        var sub = row.nextElementSibling;
+        if (!sub || !sub.classList.contains('ui-expanded-row-content')) return;
+        var matched = false;
+        sub.querySelectorAll('[id*="transportEquipmentsTable_data"] > tr').forEach(function(cr) {
+            var nr = cr.querySelector('td:nth-child(3)')?.innerText.trim() || '';
+            if (nr && nr === orderId) matched = true;
+        });
+        if (!matched) return;
+        // Il bottone PDF vive sulla riga ordine (row), non sulla riga container (cr)
+        var pdfIcon = row.querySelector('span.sdb-icon-logo_pdf');
+        if (pdfIcon) { pdfIcon.click(); }
+        else { alert('Bottone PDF non trovato per questo ordine nel gestionale.'); }
     });
 };
 
@@ -1806,6 +1824,8 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
                         style="background:#1a65b8;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="Vai alla riga nel gestionale">→</button>
                     <button onclick="if(window.opener)window.opener.tcpSelectRow('${o.id}')"
                         style="background:#5a9ce0;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="Spunta checkbox nel gestionale">✓</button>
+                    <button onclick="if(window.opener)window.opener.tcpOpenPdf('${o.id}')"
+                        style="background:#8e44ad;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="Apri PDF posizionamento">📄</button>
                     <button class="hl-btn" onclick="doHL('${o.id}','${o.traffic}')"
                         style="background:${hlBg};color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:3px;">${o.highlighted?'★':'☆'}</button>
                     <button onclick="doDel('${o.id}','${o.traffic}')"
@@ -2550,6 +2570,7 @@ function saveAddManual(){
             '<td style="white-space:nowrap;">'+
               '<button style="background:#1a65b8;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" data-act="goto">→</button>'+
               '<button style="background:#5a9ce0;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" data-act="sel">✓</button>'+
+              '<button style="background:#8e44ad;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" data-act="pdf">📄</button>'+
               '<button class="hl-btn" style="background:'+hlBg+';color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:3px;" data-act="hl">☆</button>'+
               '<button style="background:#c0392b;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;" data-act="del">✕</button>'+
             '</td>',
@@ -2559,6 +2580,7 @@ function saveAddManual(){
         // Aggiungi handlers via JS (nessun problema di escaping)
         newRow.querySelector('[data-act="goto"]').addEventListener('click',function(){if(window.opener)window.opener.tcpGoToRow(o.id);});
         newRow.querySelector('[data-act="sel"]').addEventListener('click',function(){if(window.opener)window.opener.tcpSelectRow(o.id);});
+        newRow.querySelector('[data-act="pdf"]').addEventListener('click',function(){if(window.opener)window.opener.tcpOpenPdf(o.id);});
         newRow.querySelector('[data-act="hl"]').addEventListener('click',function(){doHL(o.id,o.traffic);});
         newRow.querySelector('[data-act="del"]').addEventListener('click',function(){doDel(o.id,o.traffic);});
         newRow.querySelector('input[type="checkbox"]').addEventListener('change',function(){handleCheck(o.id,o.traffic);});
