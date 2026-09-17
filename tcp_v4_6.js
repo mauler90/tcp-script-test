@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      2.8
+// @version      2.9
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -2276,7 +2276,7 @@ function tcpMaskTime(el){var v=el.value.replace(/[^0-9]/g,'');if(v.length>2)v=v.
 function tcpMakeStopRow(cid){
     var row=document.createElement('div');
     row.className='addr-stop';
-    row.style.cssText='display:grid;grid-template-columns:1fr 52px 70px 28px;gap:5px;align-items:end;margin-bottom:5px;';
+    row.style.cssText='display:grid;grid-template-columns:1fr 52px 70px 22px 22px 28px;gap:4px;align-items:end;margin-bottom:5px;';
     var cityDiv=document.createElement('div');
     var cityLbl=document.createElement('div');cityLbl.style.cssText='font-size:10px;color:#888;margin-bottom:2px;';cityLbl.textContent='Citt\u00e0';
     var cityInp=document.createElement('input');cityInp.className='stop-city';cityInp.placeholder='es. Firenze';cityInp.style.cssText='width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;';
@@ -2290,16 +2290,38 @@ function tcpMakeStopRow(cid){
     var capLbl=document.createElement('div');capLbl.style.cssText='font-size:10px;color:#888;margin-bottom:2px;';capLbl.textContent='CAP';
     var capInp=document.createElement('input');capInp.className='stop-cap';capInp.maxLength=5;capInp.placeholder='50100';capInp.style.cssText='width:100%;padding:5px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;';
     capDiv.appendChild(capLbl);capDiv.appendChild(capInp);
+    var upBtn=document.createElement('button');upBtn.type='button';upBtn.className='stop-up';upBtn.textContent='\u25b2';upBtn.title='Sposta su';
+    upBtn.style.cssText='background:#5b7fa6;color:white;border:none;border-radius:4px;padding:5px 2px;cursor:pointer;font-size:10px;align-self:end;';
+    upBtn.addEventListener('click',function(){tcpMoveStop(this,-1,cid);});
+    var downBtn=document.createElement('button');downBtn.type='button';downBtn.className='stop-down';downBtn.textContent='\u25bc';downBtn.title='Sposta gi\u00f9';
+    downBtn.style.cssText='background:#5b7fa6;color:white;border:none;border-radius:4px;padding:5px 2px;cursor:pointer;font-size:10px;align-self:end;';
+    downBtn.addEventListener('click',function(){tcpMoveStop(this,1,cid);});
     var rmBtn=document.createElement('button');rmBtn.type='button';rmBtn.className='stop-remove';rmBtn.textContent='\u2715';
     rmBtn.style.cssText='background:#a93226;color:white;border:none;border-radius:4px;padding:5px 7px;cursor:pointer;font-size:12px;display:none;align-self:end;';
     rmBtn.addEventListener('click',function(){tcpRemoveStop(this,cid);});
-    row.appendChild(cityDiv);row.appendChild(provDiv);row.appendChild(capDiv);row.appendChild(rmBtn);
+    row.appendChild(cityDiv);row.appendChild(provDiv);row.appendChild(capDiv);row.appendChild(upBtn);row.appendChild(downBtn);row.appendChild(rmBtn);
     return row;
+}
+function tcpMoveStop(btn,dir,cid){
+    var row=btn.closest('.addr-stop');if(!row)return;
+    var c=document.getElementById(cid);if(!c)return;
+    if(dir<0){
+        var prev=row.previousElementSibling;
+        if(prev)c.insertBefore(row,prev);
+    }else{
+        var next=row.nextElementSibling;
+        if(next)c.insertBefore(next,row);
+    }
+    tcpUpdateRemoveBtns(cid);
 }
 function tcpUpdateRemoveBtns(cid){
     var c=document.getElementById(cid);if(!c)return;
     var rows=c.querySelectorAll('.addr-stop');
-    rows.forEach(function(r){var btn=r.querySelector('.stop-remove');if(btn)btn.style.display=rows.length>1?'block':'none';});
+    rows.forEach(function(r,idx){
+        var btn=r.querySelector('.stop-remove');if(btn)btn.style.display=rows.length>1?'block':'none';
+        var up=r.querySelector('.stop-up');if(up){up.disabled=(idx===0);up.style.opacity=up.disabled?'0.35':'1';up.style.cursor=up.disabled?'default':'pointer';}
+        var down=r.querySelector('.stop-down');if(down){down.disabled=(idx===rows.length-1);down.style.opacity=down.disabled?'0.35':'1';down.style.cursor=down.disabled?'default':'pointer';}
+    });
 }
 function tcpAddStop(cid){
     var c=document.getElementById(cid);if(!c)return;
@@ -4312,7 +4334,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;margin-left:8px;cursor:pointer;" title="Mostra/nascondi viaggi con Requested Trucker">
             <input id="toggle-rt" type="checkbox" checked onchange="tcpToggleRT()"> RT
         </label>
-        <input id="search-viaggi" type="text" placeholder="container, indirizzo, porto..." style="border:1px solid #aac4e0;border-radius:4px;padding:4px 10px;font-size:11px;width:260px;margin-left:8px;">
+        <input id="search-viaggi" type="text" placeholder="container, indirizzo, porto..." style="border:1px solid #aac4e0;border-radius:4px;padding:4px 10px;font-size:11px;width:260px;margin-left:8px;" onkeydown="if(event.key==='Enter'){tcpSearchViaggi(this.value);}">
         <button onclick="tcpSearchViaggi(document.getElementById('search-viaggi').value)" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">🔍 Cerca</button>
         <button onclick="document.getElementById('search-viaggi').value='';tcpSearchViaggi('');" style="background:#888;color:white;border:none;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:11px;">✕ Pulisci</button>
         <button id="btn-undo" onclick="tcpUndo()" style="background:#e67e22;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:bold;" title="Annulla ultima operazione">↩ Annulla</button>
@@ -4803,6 +4825,7 @@ function openOrUpdate(settings, lastUpdate, newCount, newIds, modIds) {
     if (!win || win.closed)
         win = window.open('', 'tcp_monitor_win', 'width=1500,height=850,resizable=yes,scrollbars=yes');
     window.tcpMonitorWin = win;
+    try { win.focus(); } catch(e) {}
     const html = buildHTML(ls.orders(), settings, lastUpdate, newCount, newIds, modIds);
     var _blob=new Blob([html],{type:'text/html;charset=utf-8'});
     var _burl=URL.createObjectURL(_blob);
