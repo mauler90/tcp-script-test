@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      3.0
+// @version      3.2
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -1776,10 +1776,18 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
     const addiz = (function(){ try{ return JSON.parse(localStorage.getItem('tcp_addizionali')||'null'); }catch(e){} return null; })() || {stessoGiorno:{base:100,hc:30},giornoSucc:{base:100,sosta:30,hc:30},weekend:{base:50,hc:30},altri:{base:50,hc:30}};
 
     // ── Tab Viaggi: righe tabella ──
+    const bachecaPubMap = (function(){
+        var m = {};
+        try { JSON.parse(localStorage.getItem('tcp_bacheca_pubblicati')||'[]').forEach(function(p){ m[p.orderId] = p; }); } catch(e) {}
+        return m;
+    })();
     const tableRows = orders.length === 0
         ? `<tr><td colspan="14" style="text-align:center;padding:30px;color:#aaa;font-size:13px;">Nessun viaggio registrato</td></tr>`
         : orders.map(o => {
             const sid  = o.id.replace(/[^a-z0-9]/gi,'_')+'_'+(o.traffic||'').toLowerCase().charAt(0);
+            const bPub = (o.traffic||'').toLowerCase()==='import' ? bachecaPubMap[o.id] : null;
+            const bachecaBadge = bPub ? `<span id="bacheca-badge-${sid}" style="background:#8e44ad;color:white;border-radius:3px;padding:1px 5px;font-size:9px;margin-left:4px;vertical-align:middle;" title="Pubblicato in bacheca: ${bPub.codice} (${bPub.stato})">📢 ${bPub.codice}</span>` : `<span id="bacheca-badge-${sid}"></span>`;
+            const bachecaBtn = (o.traffic||'').toLowerCase()==='import' ? `<button id="bacheca-btn-${sid}" onclick="tcpOpenBacheca('${o.id}')" style="background:${bPub?'#6a1fb8':'#8e44ad'};color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="${bPub?'Gestisci pubblicazione in bacheca':'Pubblica in bacheca'}">📢</button>` : '';
             const isPaired = pid.has(sid);
             const isNew    = nset.has(o.id);
             const isMod    = !isNew && mset.has(o.id);
@@ -1806,7 +1814,7 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
                         style="cursor:pointer;width:14px;height:14px;"
                         >
                 </td>
-                <td>${o.traffic}${newBadge}${modBadge}${missingBadge}</td>
+                <td>${o.traffic}${newBadge}${modBadge}${missingBadge}${bachecaBadge}</td>
                 <td style="text-align:center;padding:2px 4px;">${pallino}</td>
                 <td><b>${o.carrier}</b></td>
                 <td>${o.cont}</td>
@@ -1826,6 +1834,7 @@ function buildHTML(orders, settings, lastUpdate, newCount, newIds, modIds) {
                         style="background:#5a9ce0;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="Spunta checkbox nel gestionale">✓</button>
                     <button onclick="if(window.opener)window.opener.tcpOpenPdf('${o.id}')"
                         style="background:#8e44ad;color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:2px;" title="Apri PDF posizionamento">📄</button>
+                    ${bachecaBtn}
                     <button class="hl-btn" onclick="doHL('${o.id}','${o.traffic}')"
                         style="background:${hlBg};color:white;border:none;border-radius:3px;padding:2px 7px;cursor:pointer;font-size:11px;margin-right:3px;">${o.highlighted?'★':'☆'}</button>
                     <button onclick="doDel('${o.id}','${o.traffic}')"
@@ -2255,6 +2264,8 @@ function doAbbina(){
     sp(pairs);
     // Rimettere in essere: revoca eventuale annullamento precedente
     _tcpRevokeRemoval(((_impSelI.contNr||_impSelI.id)||'')+'|'+((_expSelE.contNr||_expSelE.id)||''));
+    // Se l'import era pubblicato in bacheca, ritiralo: e' stato riutilizzato internamente
+    tcpAutoRitiraBacheca(selI.id);
     var _rSt=null;try{_rSt=JSON.parse(localStorage.getItem('tcp_stats')||'null');}catch(_x){}
     if(!_rSt)_rSt={total:0,monthly:{}};
     var _rMn=new Date().getFullYear()+'-'+('0'+(new Date().getMonth()+1)).slice(-2);
@@ -2940,10 +2951,14 @@ function tcpGistSettings(){
     var tok=localStorage.getItem('tcp_gist_token')||'';
     var gid=localStorage.getItem('tcp_gist_id')||'';
     var gidc=localStorage.getItem('tcp_gist_id_collega')||'';
+    var burl=localStorage.getItem('tcp_bacheca_url')||'';
+    var bkey=localStorage.getItem('tcp_bacheca_key')||'';
     var m=document.getElementById('gist-settings-modal');if(!m)return;
     document.getElementById('gist-token-input').value=tok;
     document.getElementById('gist-id-input').value=gid;
     document.getElementById('gist-id-collega-input').value=gidc;
+    var bu=document.getElementById('bacheca-url-input');if(bu)bu.value=burl;
+    var bk=document.getElementById('bacheca-key-input');if(bk)bk.value=bkey;
     m.style.display='flex';
 }
 function tcpSaveGistSettings(){
@@ -2953,6 +2968,10 @@ function tcpSaveGistSettings(){
     localStorage.setItem('tcp_gist_token',tok);
     localStorage.setItem('tcp_gist_id',gid);
     localStorage.setItem('tcp_gist_id_collega',gidc);
+    var bu=document.getElementById('bacheca-url-input');
+    var bk=document.getElementById('bacheca-key-input');
+    if(bu)localStorage.setItem('tcp_bacheca_url',(bu.value||'').trim().replace(/\\/+$/,''));
+    if(bk)localStorage.setItem('tcp_bacheca_key',(bk.value||'').trim());
     document.getElementById('gist-settings-modal').style.display='none';
     var n=document.getElementById('gist-save-note');
     if(n){n.textContent='Salvato';setTimeout(function(){n.textContent='';},2000);}
@@ -3634,6 +3653,193 @@ function tcpSetTappa(i,val){
     sp(pairs);
     var old=document.getElementById('tcp-tappa-modal');if(old)old.remove();
     rPairs();
+}
+
+// ─── BACHECA RIUTILIZZI (pubblicazione container non riutilizzabili ai colleghi export) ───
+var TCP_ZONE_BASE=['Toscana','Centro Italia','Nord Est','Nord','Nord Ovest','Sud'];
+var TCP_PORTI_BACHECA=['La Spezia','Livorno','Genova'];
+var _bachecaOrderId=null;
+var _bSlots=[];
+
+function tcpGetZoneList(){
+    var custom=[];try{custom=JSON.parse(localStorage.getItem('tcp_bacheca_zone_custom')||'[]');}catch(e){}
+    var rimosse=[];try{rimosse=JSON.parse(localStorage.getItem('tcp_bacheca_zone_rimosse')||'[]');}catch(e){}
+    var all=TCP_ZONE_BASE.concat(custom.filter(function(x){return TCP_ZONE_BASE.indexOf(x)<0;}));
+    return all.filter(function(z){return rimosse.indexOf(z)<0;});
+}
+function tcpGestisciZone(){
+    var azione=prompt('Scrivi il nome di una zona per aggiungerla, oppure "-Nome" per rimuoverla.\\n\\nZone attuali:\\n'+tcpGetZoneList().join(', '));
+    if(!azione)return;
+    azione=azione.trim();if(!azione)return;
+    if(azione.charAt(0)==='-'){
+        var nome=azione.substring(1).trim();
+        var rimosse=[];try{rimosse=JSON.parse(localStorage.getItem('tcp_bacheca_zone_rimosse')||'[]');}catch(e){}
+        if(rimosse.indexOf(nome)<0){rimosse.push(nome);localStorage.setItem('tcp_bacheca_zone_rimosse',JSON.stringify(rimosse));}
+    }else{
+        var custom=[];try{custom=JSON.parse(localStorage.getItem('tcp_bacheca_zone_custom')||'[]');}catch(e){}
+        if(custom.indexOf(azione)<0){custom.push(azione);localStorage.setItem('tcp_bacheca_zone_custom',JSON.stringify(custom));}
+        var rimosse2=[];try{rimosse2=JSON.parse(localStorage.getItem('tcp_bacheca_zone_rimosse')||'[]');}catch(e){}
+        rimosse2=rimosse2.filter(function(z){return z!==azione;});
+        localStorage.setItem('tcp_bacheca_zone_rimosse',JSON.stringify(rimosse2));
+    }
+    tcpRenderBachecaSlots();
+}
+
+function tcpGetPubblicazioni(){try{return JSON.parse(localStorage.getItem('tcp_bacheca_pubblicati')||'[]');}catch(e){return [];}}
+function tcpSavePubblicazioni(p){localStorage.setItem('tcp_bacheca_pubblicati',JSON.stringify(p));}
+function tcpGetPubblicazione(orderId){return tcpGetPubblicazioni().find(function(p){return p.orderId===orderId;});}
+function tcpBachecaConfig(){return {url:(localStorage.getItem('tcp_bacheca_url')||'').replace(/\\/+$/,''), key:localStorage.getItem('tcp_bacheca_key')||''};}
+function tcpBachecaFetch(path,body){
+    var cfg=tcpBachecaConfig();
+    return fetch(cfg.url+'/api/'+path,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.key},body:JSON.stringify(body||{})})
+        .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||('Errore '+r.status));return d;});});
+}
+function tcpISOtoIT(iso){if(!iso)return'';var p=iso.split('-');if(p.length!==3)return'';return p[2]+'/'+p[1]+'/'+p[0].slice(2);}
+function tcpITtoISO(it){var m=(it||'').match(/^(\\d{2})\\/(\\d{2})\\/(\\d{2})$/);if(!m)return'';return '20'+m[3]+'-'+m[2]+'-'+m[1];}
+
+function tcpRenderBachecaBadge(sid,pub){
+    var el=document.getElementById('bacheca-badge-'+sid);
+    if(!el)return;
+    el.innerHTML=pub?('<span style="background:#8e44ad;color:white;border-radius:3px;padding:1px 5px;font-size:9px;margin-left:4px;vertical-align:middle;" title="Pubblicato in bacheca: '+pub.codice+' ('+pub.stato+')">\uD83D\uDCE2 '+pub.codice+'</span>'):'';
+    var btn=document.getElementById('bacheca-btn-'+sid);
+    if(btn)btn.style.background=pub?'#6a1fb8':'#8e44ad';
+}
+
+function tcpSuggerisciGiorno(o){
+    var m=(o.delivery||'').match(/(\\d{2})\\/(\\d{2})\\/(\\d{2}),?\\s*(\\d{2}):(\\d{2})/);
+    if(!m)return'';
+    var d=new Date(2000+parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]));
+    var ora=parseInt(m[4]);
+    if(ora>=13)d.setDate(d.getDate()+1);
+    return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getFullYear()).slice(-2);
+}
+function tcpOpenBacheca(orderId){
+    var orders=lo();var o=orders.find(function(x){return x.id===orderId;});if(!o)return;
+    var cfg=tcpBachecaConfig();
+    if(!cfg.url||!cfg.key){alert('Configura prima URL e chiave della bacheca nelle Impostazioni Gist (icona \u2699\ufe0f nella tab Riutilizzi).');tcpGistSettings();return;}
+    var pub=tcpGetPubblicazione(orderId);
+    _bachecaOrderId=orderId;
+    var old=document.getElementById('tcp-bacheca-modal');if(old)old.remove();
+    var ov=document.createElement('div');
+    ov.id='tcp-bacheca-modal';
+    ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    var html='<div id="tcp-bacheca-box" style="background:white;border-radius:10px;padding:20px;width:440px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:0 4px 30px rgba(0,0,0,.3);">';
+    html+='<div style="font-weight:bold;color:#002856;font-size:14px;margin-bottom:12px;">\uD83D\uDCE2 Bacheca \u2014 '+o.carrier+' '+o.cont+'</div>';
+    if(pub){
+        html+='<div style="font-size:12px;margin-bottom:10px;color:#555;">Codice: <b style="color:#002856;">'+pub.codice+'</b></div>';
+    }
+    html+='<div id="tcp-bacheca-slots"></div>';
+    html+='<button onclick="tcpAddBachecaSlot()" style="background:#5b7fa6;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;margin:6px 0 12px;">+ Aggiungi disponibilit\u00e0</button>';
+    html+='<div style="font-size:11px;color:#555;margin-bottom:4px;font-weight:bold;">Porti di ricarico</div>';
+    html+='<div id="tcp-bacheca-porti" style="display:flex;gap:10px;margin-bottom:6px;flex-wrap:wrap;">'+TCP_PORTI_BACHECA.map(function(p){var checked=(pub&&pub.porti&&pub.porti.indexOf(p)>=0)?'checked':'';return '<label style="font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="bacheca-porto" value="'+p+'" '+checked+'> '+p+'</label>';}).join('')+'</div>';
+    html+='<div style="text-align:right;margin-bottom:12px;"><span onclick="tcpGestisciZone()" style="font-size:10px;color:#888;cursor:pointer;text-decoration:underline;">Gestisci elenco zone</span></div>';
+    if(pub){
+        html+='<div style="display:flex;gap:8px;margin-bottom:14px;">'
+            +'<label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="radio" name="bstato" value="disponibile" '+(pub.stato==='disponibile'?'checked':'')+'> Disponibile</label>'
+            +'<label style="font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="radio" name="bstato" value="prenotato" '+(pub.stato==='prenotato'?'checked':'')+'> Prenotato</label>'
+            +'</div>';
+    }
+    html+='<div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">';
+    if(pub){
+        html+='<button onclick="tcpRitiraBacheca()" style="background:#c0392b;color:white;border:none;border-radius:5px;padding:7px 14px;cursor:pointer;font-size:12px;margin-right:auto;">\u2716 Ritira dalla bacheca</button>';
+    }
+    html+='<button onclick="document.getElementById(&#39;tcp-bacheca-modal&#39;).remove()" style="background:#aaa;color:white;border:none;border-radius:5px;padding:7px 14px;cursor:pointer;font-size:12px;">Annulla</button>'
+        +'<button onclick="tcpSalvaBacheca()" style="background:#27ae60;color:white;border:none;border-radius:5px;padding:7px 16px;cursor:pointer;font-size:12px;font-weight:bold;">'+(pub?'\uD83D\uDCBE Salva modifiche':'\uD83D\uDCE2 Pubblica')+'</button>'
+        +'</div>';
+    html+='</div>';
+    ov.innerHTML=html;
+    ov.onclick=function(e){if(e.target===ov)ov.remove();};
+    document.body.appendChild(ov);
+    _bSlots=pub?pub.disponibilita.map(function(s){return {giorno:tcpISOtoIT(s.giorno),fascia:s.fascia,zona:s.zona};}):[{giorno:tcpSuggerisciGiorno(o),fascia:'giornata',zona:tcpGetZoneList()[0]||''}];
+    tcpRenderBachecaSlots();
+}
+
+function tcpRenderBachecaSlots(){
+    var c=document.getElementById('tcp-bacheca-slots');if(!c)return;
+    var zone=tcpGetZoneList();
+    c.innerHTML=_bSlots.map(function(s,i){
+        return '<div style="display:grid;grid-template-columns:90px 110px 1fr 22px;gap:5px;margin-bottom:5px;align-items:center;">'
+            +'<input type="text" value="'+(s.giorno||'')+'" placeholder="gg/mm/aa" maxlength="8" oninput="tcpMaskDate(this);_bSlots['+i+'].giorno=this.value;" style="padding:5px;border:1px solid #ccc;border-radius:4px;font-size:11px;box-sizing:border-box;">'
+            +'<select onchange="_bSlots['+i+'].fascia=this.value;" style="padding:5px;border:1px solid #ccc;border-radius:4px;font-size:11px;">'
+            +['mattina','pomeriggio','giornata'].map(function(f){return '<option value="'+f+'" '+(s.fascia===f?'selected':'')+'>'+(f==='mattina'?'Mattina':f==='pomeriggio'?'Pomeriggio':'Tutto il giorno')+'</option>';}).join('')
+            +'</select>'
+            +'<select onchange="_bSlots['+i+'].zona=this.value;" style="padding:5px;border:1px solid #ccc;border-radius:4px;font-size:11px;">'
+            +zone.map(function(z){return '<option value="'+z+'" '+(s.zona===z?'selected':'')+'>'+z+'</option>';}).join('')
+            +'</select>'
+            +(_bSlots.length>1?('<button onclick="tcpRmBachecaSlot('+i+')" style="background:#a93226;color:white;border:none;border-radius:4px;padding:5px 5px;cursor:pointer;font-size:10px;">\u2715</button>'):'<span></span>')
+            +'</div>';
+    }).join('');
+}
+function tcpAddBachecaSlot(){_bSlots.push({giorno:'',fascia:'giornata',zona:tcpGetZoneList()[0]||''});tcpRenderBachecaSlots();}
+function tcpRmBachecaSlot(i){_bSlots.splice(i,1);tcpRenderBachecaSlots();}
+
+function tcpSalvaBacheca(){
+    var porti=[].slice.call(document.querySelectorAll('.bacheca-porto:checked')).map(function(x){return x.value;});
+    if(!porti.length){alert('Seleziona almeno un porto.');return;}
+    var disponibilita=[];
+    for(var i=0;i<_bSlots.length;i++){
+        var iso=tcpITtoISO(_bSlots[i].giorno);
+        if(!iso){alert('Controlla le date inserite (formato gg/mm/aa).');return;}
+        disponibilita.push({giorno:iso,fascia:_bSlots[i].fascia,zona:_bSlots[i].zona});
+    }
+    var orders=lo();var o=orders.find(function(x){return x.id===_bachecaOrderId;});if(!o)return;
+    var pub=tcpGetPubblicazione(_bachecaOrderId);
+    var statoSel=document.querySelector('input[name="bstato"]:checked');
+    var stato=statoSel?statoSel.value:'disponibile';
+    if(pub){
+        tcpBachecaFetch('update',{codice:pub.codice,tipo:o.cont,compagnia:o.carrier,disponibilita:disponibilita,porti:porti}).then(function(){
+            return stato!==pub.stato?tcpBachecaFetch('set-stato',{codice:pub.codice,stato:stato}):Promise.resolve();
+        }).then(function(){
+            pub.tipo=o.cont;pub.compagnia=o.carrier;pub.disponibilita=disponibilita;pub.porti=porti;pub.stato=stato;
+            var pubs=tcpGetPubblicazioni().map(function(p){return p.orderId===_bachecaOrderId?pub:p;});
+            tcpSavePubblicazioni(pubs);
+            var m=document.getElementById('tcp-bacheca-modal');if(m)m.remove();
+            tcpToast('\u2713 Modifiche salvate');
+            tcpRenderBachecaBadge(sidOf(_bachecaOrderId,o.traffic),pub);
+        }).catch(function(e){alert('Errore: '+e.message);});
+    }else{
+        tcpBachecaFetch('publish',{tipo:o.cont,compagnia:o.carrier,disponibilita:disponibilita,porti:porti}).then(function(res){
+            var pubs=tcpGetPubblicazioni();
+            var nuovo={orderId:_bachecaOrderId,codice:res.codice,tipo:o.cont,compagnia:o.carrier,disponibilita:disponibilita,porti:porti,stato:'disponibile',contNr:o.contNr||'',address:o.address||'',branch:o.branch||'',pubblicatoAt:new Date().toISOString()};
+            pubs.push(nuovo);
+            tcpSavePubblicazioni(pubs);
+            var m=document.getElementById('tcp-bacheca-modal');if(m)m.remove();
+            tcpToast('\u2713 Pubblicato in bacheca \u2014 codice '+res.codice);
+            tcpRenderBachecaBadge(sidOf(_bachecaOrderId,o.traffic),nuovo);
+        }).catch(function(e){alert('Errore: '+e.message);});
+    }
+}
+function tcpRitiraBacheca(orderIdParam){
+    var orderId=orderIdParam||_bachecaOrderId;
+    var pub=tcpGetPubblicazione(orderId);if(!pub)return;
+    if(!confirm('Ritirare "'+pub.codice+'" dalla bacheca?'))return;
+    tcpBachecaFetch('unpublish',{codice:pub.codice}).then(function(){
+        var pubs=tcpGetPubblicazioni().filter(function(p){return p.orderId!==orderId;});
+        tcpSavePubblicazioni(pubs);
+        var m=document.getElementById('tcp-bacheca-modal');if(m)m.remove();
+        tcpToast('\u2713 Ritirato dalla bacheca');
+        var o=lo().find(function(x){return x.id===orderId;});
+        if(o)tcpRenderBachecaBadge(sidOf(orderId,o.traffic),null);
+    }).catch(function(e){alert('Errore: '+e.message);});
+}
+function tcpAutoRitiraBacheca(orderId){
+    var pub=tcpGetPubblicazione(orderId);if(!pub)return;
+    var cfg=tcpBachecaConfig();if(!cfg.url||!cfg.key)return;
+    tcpBachecaFetch('unpublish',{codice:pub.codice}).then(function(){
+        var pubs=tcpGetPubblicazioni().filter(function(p){return p.orderId!==orderId;});
+        tcpSavePubblicazioni(pubs);
+        tcpToast('\u2713 Container abbinato internamente: rimosso automaticamente dalla bacheca ('+pub.codice+')',5000);
+        var o=lo().find(function(x){return x.id===orderId;});
+        if(o)tcpRenderBachecaBadge(sidOf(orderId,o.traffic),null);
+    }).catch(function(e){ tcpToast('\u26a0\ufe0f Non sono riuscito a ritirare '+pub.codice+' dalla bacheca: '+e.message,6000); });
+}
+function tcpCercaCodiceBacheca(){
+    var cod=prompt('Inserisci il codice ricevuto dal collega (es. RC-8214):');
+    if(!cod)return;
+    cod=cod.trim().toUpperCase();
+    var pub=tcpGetPubblicazioni().find(function(p){return (p.codice||'').toUpperCase()===cod;});
+    if(!pub){alert('Codice non trovato tra le pubblicazioni fatte da questa postazione.');return;}
+    alert('Codice: '+pub.codice+'\\nContainer: '+(pub.contNr||'\u2014')+'\\nIndirizzo: '+(pub.address||'\u2014')+'\\nBranch: '+(pub.branch||'\u2014')+'\\nStato: '+pub.stato);
 }
 
 function rPlanner(){
@@ -4360,6 +4566,7 @@ document.addEventListener('DOMContentLoaded',()=>{cleanExpired();rPairs();rPlann
         <button onclick="tcpSearchViaggi(document.getElementById('search-viaggi').value)" style="background:#002856;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;">🔍 Cerca</button>
         <button onclick="document.getElementById('search-viaggi').value='';tcpSearchViaggi('');" style="background:#888;color:white;border:none;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:11px;">✕ Pulisci</button>
         <button id="btn-undo" onclick="tcpUndo()" style="background:#e67e22;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:bold;" title="Annulla ultima operazione">↩ Annulla</button>
+        <button onclick="tcpCercaCodiceBacheca()" style="background:#6a1fb8;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:bold;margin-left:4px;" title="Cerca a quale container corrisponde un codice bacheca">📢 Cerca codice</button>
         <span id="visible-count" style="margin-left:auto;font-size:11px;color:#555;white-space:nowrap;font-weight:bold;"></span>
     </div>
     <div id="mt-scroll" style="overflow-y:auto;flex:1;min-height:0;">
@@ -4820,6 +5027,14 @@ window.tcpApplicaMerge=function(){
         <input id="gist-id-collega-input" type="text" placeholder="es. b2c3d4e5f6a1..." style="width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;margin-top:3px;font-family:monospace;">
       </label>
       <p style="font-size:11px;color:#888;">Ognuno pubblica sul proprio Gist e legge da quello del collega. Usa Sync+Pubblica per fare tutto in un colpo.</p>
+      <hr style="border:none;border-top:1px dashed #d0dff0;margin:4px 0;">
+      <label style="font-size:11px;color:#555;">URL Bacheca Riutilizzi (es. https://bacheca-riutilizzi.pages.dev)<br>
+        <input id="bacheca-url-input" type="text" placeholder="https://..." style="width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;margin-top:3px;">
+      </label>
+      <label style="font-size:11px;color:#555;">Chiave admin bacheca (ADMIN_API_KEY)<br>
+        <input id="bacheca-key-input" type="password" placeholder="..." style="width:100%;padding:5px 7px;border:1px solid #ccc;border-radius:4px;font-size:12px;box-sizing:border-box;margin-top:3px;font-family:monospace;">
+      </label>
+      <p style="font-size:11px;color:#888;">Usata dal bottone 📢 per pubblicare/ritirare/gestire i container nella bacheca condivisa con i colleghi export.</p>
     </div>
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;align-items:center;">
       <span id="gist-save-note" style="font-size:11px;color:#27ae60;margin-right:auto;"></span>
