@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         S.R.C - Script Riutilizzo Container
 // @namespace    http://tampermonkey.net/
-// @version      3.4
+// @version      3.5
 // @description  S.R.C - Script Riutilizzo Container per C.r.t. | (c) 2026 Vittorio Zingoni - All rights reserved
 // @match        *://*/*
 // @grant        none
@@ -103,7 +103,7 @@ const CARRIERS = {
     'ONE':      text => /ONE|ocean network/i.test(text),
     'CMA':      text => /CMA/i.test(text),
     'Maersk':   text => /maersk/i.test(text),
-    'OOCL':     text => /OOCL|ORIENT OVERSEAS/i.test(text),
+    'OOCL':     text => /OOCL|orient.?overseas/i.test(text),
     'ZIM':      text => /\bZIM\b/i.test(text),
     'Yang Ming': text => /yang.?ming/i.test(text),
     'Evergreen': text => /evergreen/i.test(text),
@@ -516,7 +516,7 @@ function addCompagnieButtons() {
     var btnHapag  = creaBtn('btn-hapag',         '🚢 Hapag',  function() { selezionaCarrier('Hapag Lloyd'); });
     var btnONE    = creaBtn('btn-one',           '🚢 One',    function() { selezionaCarrier('Ocean Network'); });
     var btnCMA    = creaBtn('btn-cma',           '🚢 CMA',    function() { selezionaCarrier('CMA-CGM'); });
-    var btnOOCL   = creaBtn('btn-oocl',          '🚢 OOCL',   function() { selezionaCarrier('ORIENT OVERSEAS CONTAINER LINE LTD'); });
+    var btnOOCL   = creaBtn('btn-oocl',          '🚢 OOCL',   function() { selezionaCarrier('ORIENT OVERSEAS'); });
     var btnZIM    = creaBtn('btn-zim',           '🚢 Zim',    function() { selezionaCarrier('ZIM INTEGRATED SHIPPING SERVICE LTD'); });
     var btnYMing  = creaBtn('btn-yming',         '🚢 Y.Ming', function() { selezionaCarrier('Yang Ming Marine Transport Corporation'); });
     var btnMaersk = creaBtn('btn-maersk',        '🚢 Maersk', function() { selezionaCarrier('MAERSK A/S'); });
@@ -963,7 +963,7 @@ function buildSidePanel() {
         btn('CMA',   '#1a65b8', function(){ selezionaCarrier('CMA-CGM'); })
     ));
     body.appendChild(row2(
-        btn('OOCL',  '#1a65b8', function(){ selezionaCarrier('ORIENT OVERSEAS CONTAINER LINE LTD'); }),
+        btn('OOCL',  '#1a65b8', function(){ selezionaCarrier('ORIENT OVERSEAS'); }),
         btn('ZIM',   '#1a65b8', function(){ selezionaCarrier('ZIM INTEGRATED SHIPPING SERVICE LTD'); })
     ));
     body.appendChild(row2(
@@ -1180,7 +1180,7 @@ function ncr(t) {
     if (/hapag/i.test(t)) return 'Hapag';
     if (/ONE|ocean network/i.test(t)) return 'ONE';
     if (/CMA/i.test(t)) return 'CMA';
-    if (/OOCL/i.test(t)) return 'OOCL';
+    if (/OOCL|orient.?overseas/i.test(t)) return 'OOCL';
     if (/\bZIM\b/i.test(t)) return 'ZIM';
     if (/yang.?ming/i.test(t)) return 'Yang Ming';
     if (/maersk/i.test(t)) return 'Maersk';
