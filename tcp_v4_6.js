@@ -516,7 +516,7 @@ function addCompagnieButtons() {
     var btnHapag  = creaBtn('btn-hapag',         '🚢 Hapag',  function() { selezionaCarrier('Hapag Lloyd'); });
     var btnONE    = creaBtn('btn-one',           '🚢 One',    function() { selezionaCarrier('Ocean Network'); });
     var btnCMA    = creaBtn('btn-cma',           '🚢 CMA',    function() { selezionaCarrier('CMA-CGM'); });
-    var btnOOCL   = creaBtn('btn-oocl',          '🚢 OOCL',   function() { selezionaCarrier('OOCL LOGISTICS LINE LTD'); });
+    var btnOOCL   = creaBtn('btn-oocl',          '🚢 OOCL',   function() { selezionaCarrier('ORIENT OVERSEAS CONTAINER LINE LTD'); });
     var btnZIM    = creaBtn('btn-zim',           '🚢 Zim',    function() { selezionaCarrier('ZIM INTEGRATED SHIPPING SERVICE LTD'); });
     var btnYMing  = creaBtn('btn-yming',         '🚢 Y.Ming', function() { selezionaCarrier('Yang Ming Marine Transport Corporation'); });
     var btnMaersk = creaBtn('btn-maersk',        '🚢 Maersk', function() { selezionaCarrier('MAERSK A/S'); });
@@ -963,7 +963,7 @@ function buildSidePanel() {
         btn('CMA',   '#1a65b8', function(){ selezionaCarrier('CMA-CGM'); })
     ));
     body.appendChild(row2(
-        btn('OOCL',  '#1a65b8', function(){ selezionaCarrier('OOCL LOGISTICS LINE LTD'); }),
+        btn('OOCL',  '#1a65b8', function(){ selezionaCarrier('ORIENT OVERSEAS CONTAINER LINE LTD'); }),
         btn('ZIM',   '#1a65b8', function(){ selezionaCarrier('ZIM INTEGRATED SHIPPING SERVICE LTD'); })
     ));
     body.appendChild(row2(
